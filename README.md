@@ -14,11 +14,7 @@ Live site: **[mcv09.materialize.fun](https://mcv09.materialize.fun)**
 
 ## What it is
 
-A buildless static PWA that turns a Faust/WASM ambient DSP into a dense, tactile, retro-HUD control surface for shaping matter-like drone states through presets, motion, haptics, and shareable user-preset transfer codes.
-
-It is not only a synth — it is an authored interface and sonic world. Part control surface, part ritual console, part audio object. Dense but alive. Technical but mystical. Precise but strange.
-
-The user should feel like they are tuning a machine that has its own weather.
+A buildless static PWA that turns a Faust/WASM ambient DSP into a dense, tactile, control surface for shaping drone states through presets, motion, and shareable user-preset transfer codes.
 
 ## Features
 
