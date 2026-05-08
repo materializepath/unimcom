@@ -6,6 +6,8 @@
 
 Live site: **[mcv09.materialize.fun](https://mcv09.materialize.fun)**
 
+![Universal Matter Compiler — control surface](assets/screenshot-ui.jpeg)
+
 ---
 
 ## What it is
