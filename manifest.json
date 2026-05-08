@@ -1,0 +1,30 @@
+{
+  "name": "u.matter.compiler.v09",
+  "short_name": "u.matter.compiler.v09",
+  "start_url": "./index.html",
+  "description": "universal.matter.compiler.dsp.v.0.9 alpha: / / a FAUST DSP based experimental drone playground by: ▣ P.A.T.H. @materializepath",
+  "display": "standalone",
+  "background_color": "#020305",
+  "theme_color": "#020305",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

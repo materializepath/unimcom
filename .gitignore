@@ -1,0 +1,17 @@
+# Debug screenshots
+.tmp-*.png
+
+# Debug live captures
+.debug_live/
+
+# Local backups
+backups/
+
+# Deploy zips
+deploy/
+
+# Private notes
+*do not put on github* docs frm notes/
+
+# macOS
+.DS_Store
