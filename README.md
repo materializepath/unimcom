@@ -1,10 +1,10 @@
 # unimcom
 
-**UNIMCOM.MKI.UNIVERSAL.MATTER.COMPILER** — a Faust DSP control-surface instrument
+an experimental, motion modulated, Faust DSP control surface web app
 
-> `universal.matter.compiler.dsp.v.0.9.2` · `DSPv.0.3.2` · `PATH:EDITIONS`
+> `universal.matter.compiler.dsp.v.0.9.2` · `DSPv.0.3.2`
 
-Live site: **[mcv09.materialize.fun](https://mcv09.materialize.fun)**
+Live site: **[unimcom.materialize.fun](https://unimcom.materialize.fun/)**
 
 ![Universal Matter Compiler — control surface](assets/screenshot-ui.jpeg)
 
