@@ -1,6 +1,6 @@
 // Set to > 0 if the DSP is polyphonic
 const FAUST_DSP_VOICES = 0;
-const CREATE_NODE_MODULE_SPEC = "./create-node.js?v=20260315r44";
+const CREATE_NODE_MODULE_SPEC = "./create-node.js?v=20260521seq4";
 const THREE_MODULE_SPEC = "./vendor/three.module.min.js";
 const IS_LOCAL_PREVIEW = ["localhost", "127.0.0.1"].includes(window.location.hostname);
 
@@ -57,6 +57,10 @@ let faustReadyReject;
 let refreshStartControlUI = () => {};
 let refreshMotionControlUI = () => {};
 let refreshMotionGlyphUI = () => {};
+let refreshMIDIControlUI = () => {};
+let refreshLiveInputControlUI = () => {};
+let refreshAudioInputDeviceListUI = () => {};
+let refreshSeqPanelUI = () => {};
 let refreshPresetShadeUI = () => {};
 let refreshUserPresetButtonsUIExternal = () => {};
 let refreshFooterPresetTransferConsoleUI = () => {};
@@ -83,6 +87,123 @@ let fallbackPatternFrame = 0;
 let fallbackPatternToken = 0;
 const MOTION_MODE_SIGNAL_KEYS = Object.freeze(["tiltX", "tiltY", "gyroPitch", "gyroRoll", "gyroSpin"]);
 const MOTION_MODE_RANDOM_ASSIGNMENT_RATIO = 0.32;
+
+// ── Step Sequencer Engine ─────────────────────────────────────────────────────
+const SEQ_VALID_STEP_COUNTS = new Set([8, 16, 32]);
+const SEQ_VALID_DIRECTIONS = new Set(["forward", "reverse", "pingpong"]);
+const SEQ_MIDPOINT = 0;
+
+class StepSequencer {
+    constructor() {
+        this._bpm = 120;
+        this._stepCount = 16;
+        this._direction = "forward";
+        this._params = new Map();
+        this._timerId = null;
+        this._currentStep = 0;
+        this._playing = false;
+        this._pingPongDir = 1;
+        this._onStep = null;
+        this._onParamUpdate = null;
+    }
+    destroy() { this.stop(); this._params.clear(); this._onStep = null; this._onParamUpdate = null; }
+    setBPM(bpm) { this._bpm = Math.max(30, Math.min(300, Number(bpm) || 120)); if (this._playing) this._restartTimer(); }
+    getBPM() { return this._bpm; }
+    setStepCount(count) {
+        const n = Number(count);
+        if (!SEQ_VALID_STEP_COUNTS.has(n)) return;
+        if (n === this._stepCount) return;
+        const oldCount = this._stepCount;
+        this._stepCount = n;
+        for (const param of this._params.values()) {
+            const newPattern = new Float32Array(n);
+            newPattern.fill(SEQ_MIDPOINT);
+            const copyLen = Math.min(oldCount, n);
+            for (let i = 0; i < copyLen; i++) newPattern[i] = param.pattern[i];
+            param.pattern = newPattern;
+        }
+    }
+    getStepCount() { return this._stepCount; }
+    linkParameter(path, min, max, step) {
+        const pattern = new Float32Array(this._stepCount);
+        pattern.fill(SEQ_MIDPOINT);
+        this._params.set(path, { path, min: Number(min), max: Number(max), step: step != null ? Number(step) : null, pattern });
+    }
+    unlinkParameter(path) { this._params.delete(path); }
+    isLinked(path) { return this._params.has(path); }
+    getLinkedParameters() { return Array.from(this._params.keys()); }
+    setStepValue(path, stepIndex, value) {
+        const param = this._params.get(path);
+        if (!param || stepIndex < 0 || stepIndex >= this._stepCount) return;
+        param.pattern[stepIndex] = Math.max(0, Math.min(1, Number(value)));
+    }
+    getStepValue(path, stepIndex) {
+        const param = this._params.get(path);
+        if (!param || stepIndex < 0 || stepIndex >= this._stepCount) return SEQ_MIDPOINT;
+        return param.pattern[stepIndex];
+    }
+    clearPattern(path) { const param = this._params.get(path); if (param) param.pattern.fill(SEQ_MIDPOINT); }
+    play(onStep, onParamUpdate) {
+        if (this._playing) this.stop();
+        this._onStep = onStep;
+        this._onParamUpdate = onParamUpdate;
+        this._currentStep = 0;
+        this._pingPongDir = 1;
+        this._playing = true;
+        this._tick();
+        this._timerId = setInterval(() => this._tick(), 60000 / this._bpm);
+    }
+    stop() {
+        if (this._timerId !== null) { clearInterval(this._timerId); this._timerId = null; }
+        this._playing = false;
+        this._currentStep = 0;
+        this._pingPongDir = 1;
+    }
+    isPlaying() { return this._playing; }
+    getCurrentStep() { return this._currentStep; }
+    setDirection(dir) { if (SEQ_VALID_DIRECTIONS.has(dir)) { this._direction = dir; this._pingPongDir = 1; } }
+    getDirection() { return this._direction; }
+    _restartTimer() {
+        if (this._timerId !== null) {
+            clearInterval(this._timerId);
+            this._timerId = setInterval(() => this._tick(), 60000 / this._bpm);
+        }
+    }
+    _denormalize(param, normalized) {
+        let value = param.min + normalized * (param.max - param.min);
+        if (param.step != null && param.step > 0) {
+            value = Math.round((value - param.min) / param.step) * param.step + param.min;
+            value = Math.max(param.min, Math.min(param.max, value));
+        }
+        return value;
+    }
+    _tick() {
+        const step = this._currentStep;
+        for (const param of this._params.values()) {
+            if (this._onParamUpdate) this._onParamUpdate(param.path, this._denormalize(param, param.pattern[step]));
+        }
+        if (this._onStep) this._onStep(step);
+        this._advanceStep();
+    }
+    _advanceStep() {
+        const count = this._stepCount;
+        switch (this._direction) {
+            case "forward": this._currentStep = (this._currentStep + 1) % count; break;
+            case "reverse": this._currentStep = (this._currentStep - 1 + count) % count; break;
+            case "pingpong":
+                this._currentStep += this._pingPongDir;
+                if (this._currentStep >= count) { this._currentStep = count - 2; this._pingPongDir = -1; }
+                if (this._currentStep < 0) { this._currentStep = 1; this._pingPongDir = 1; }
+                this._currentStep = Math.max(0, Math.min(count - 1, this._currentStep));
+                break;
+            default: this._currentStep = (this._currentStep + 1) % count;
+        }
+    }
+}
+
+let sequencer = null;
+let seqPanelOpen = false;
+
 const MOTION_MODE_RANDOM_ASSIGNMENT_MIN = 12;
 const MOTION_MODE_RANDOM_ASSIGNMENT_MAX = 18;
 const MOTION_MODE_GYRO_DECAY = 0.08;
@@ -211,6 +332,21 @@ const motionModeState = {
     values: createMotionSignalState(),
     accelerationTarget: 0,
     accelerationValue: 0,
+};
+const midiInputState = {
+    active: false,
+    access: null,
+    inputs: new Set(),
+    stateChangeBound: false,
+    supported: typeof navigator.requestMIDIAccess === "function",
+};
+const liveInputState = {
+    active: false,
+    streamNode: null,
+    selectedDeviceId: "",
+    devices: [],
+    deviceChangeBound: false,
+    supported: Boolean(navigator.mediaDevices?.getUserMedia && navigator.mediaDevices?.enumerateDevices),
 };
 const faustReady = new Promise((resolve, reject) => {
     faustReadyResolve = resolve;
@@ -2433,6 +2569,8 @@ async function waitForNextPaint(frames = 1) {
 async function resetAudioEngine() {
     cancelModeMorph();
     const shouldResume = audioActivated || audioContext.state === "running";
+    const shouldRestoreMIDI = midiInputState.active;
+    const shouldRestoreLiveInput = liveInputState.active;
     const snapshot = snapshotCurrentParamValues();
 
     try {
@@ -2487,7 +2625,15 @@ async function resetAudioEngine() {
     if (shouldResume) {
         await ensureAudioActivated();
     }
+    if (shouldRestoreMIDI) {
+        await startMIDI();
+    }
+    if (shouldRestoreLiveInput) {
+        await startLiveAudioInput();
+    }
     refreshStartControlUI();
+    refreshMIDIControlUI();
+    refreshLiveInputControlUI();
 }
 
 function cancelModeMorph() {
@@ -3329,6 +3475,316 @@ function mountHUDControls() {
     $motionMode.setAttribute("aria-label", "Enable motion mode");
     $motionMode.dataset.active = "0";
 
+    const $midiMode = document.createElement("button");
+    $midiMode.type = "button";
+    $midiMode.className = "hud-control-btn hud-control-btn-midi";
+    $midiMode.dataset.active = "0";
+    $midiMode.setAttribute("aria-pressed", "false");
+    $midiMode.title = "Enable MIDI input";
+    $midiMode.setAttribute("aria-label", "Enable MIDI input");
+    const $midiModeGlyph = document.createElement("span");
+    $midiModeGlyph.className = "hud-mini-control-glyph hud-midi-glyph";
+    $midiModeGlyph.textContent = "MIDI";
+    $midiMode.appendChild($midiModeGlyph);
+
+    const $liveInput = document.createElement("button");
+    $liveInput.type = "button";
+    $liveInput.className = "hud-control-btn hud-control-btn-live-input";
+    $liveInput.dataset.active = "0";
+    $liveInput.dataset.inputUnavailable = "0";
+    $liveInput.setAttribute("aria-pressed", "false");
+    $liveInput.title = "Enable live audio input";
+    $liveInput.setAttribute("aria-label", "Enable live audio input");
+    const $liveInputGlyph = document.createElement("span");
+    $liveInputGlyph.className = "hud-mini-control-glyph hud-live-input-glyph";
+    $liveInputGlyph.textContent = "IN";
+    $liveInput.appendChild($liveInputGlyph);
+
+    const $audioInputPicker = document.createElement("label");
+    $audioInputPicker.className = "hud-theme-picker hud-audio-input-picker";
+    $audioInputPicker.setAttribute("for", "hud-audio-input-select");
+    const $audioInputLabel = document.createElement("span");
+    $audioInputLabel.className = "hud-theme-picker-label";
+    $audioInputLabel.textContent = "SOURCE";
+    const $audioInputSelect = document.createElement("select");
+    $audioInputSelect.id = "hud-audio-input-select";
+    $audioInputSelect.className = "hud-theme-select";
+    $audioInputSelect.setAttribute("aria-label", "Select live audio input source");
+    $audioInputSelect.title = "Select live audio input source";
+    $audioInputPicker.append($audioInputLabel, $audioInputSelect);
+
+    // ── SEQ button ─────────────────────────────────────────────────────────
+    const $seqMode = document.createElement("button");
+    $seqMode.type = "button";
+    $seqMode.className = "hud-control-btn hud-control-btn-seq";
+    $seqMode.dataset.active = "0";
+    $seqMode.setAttribute("aria-pressed", "false");
+    $seqMode.title = "Toggle step sequencer";
+    $seqMode.setAttribute("aria-label", "Toggle step sequencer");
+    const $seqModeGlyph = document.createElement("span");
+    $seqModeGlyph.className = "hud-mini-control-glyph hud-seq-glyph";
+    $seqModeGlyph.textContent = "SEQ";
+    $seqMode.appendChild($seqModeGlyph);
+
+    // ── SEQ panel ──────────────────────────────────────────────────────────
+    const $seqPanel = document.createElement("div");
+    $seqPanel.className = "hud-seq-panel";
+    $seqPanel.dataset.open = "0";
+
+    const $seqTransport = document.createElement("div");
+    $seqTransport.className = "hud-seq-transport";
+
+    const $seqPlay = document.createElement("button");
+    $seqPlay.type = "button";
+    $seqPlay.className = "hud-seq-btn";
+    $seqPlay.textContent = "▶";
+    $seqPlay.title = "Play";
+    $seqPlay.setAttribute("aria-label", "Play sequencer");
+    $seqPlay.dataset.active = "0";
+
+    const $seqStop = document.createElement("button");
+    $seqStop.type = "button";
+    $seqStop.className = "hud-seq-btn";
+    $seqStop.textContent = "■";
+    $seqStop.title = "Stop";
+    $seqStop.setAttribute("aria-label", "Stop sequencer");
+
+    const $seqBPMLabel = document.createElement("span");
+    $seqBPMLabel.className = "hud-seq-label";
+    $seqBPMLabel.textContent = "BPM";
+
+    const $seqBPMDown = document.createElement("button");
+    $seqBPMDown.type = "button";
+    $seqBPMDown.className = "hud-seq-btn hud-seq-btn-sm";
+    $seqBPMDown.textContent = "−";
+    $seqBPMDown.title = "Decrease BPM";
+    $seqBPMDown.setAttribute("aria-label", "Decrease BPM");
+
+    const $seqBPMValue = document.createElement("span");
+    $seqBPMValue.className = "hud-seq-value";
+    $seqBPMValue.textContent = "120";
+
+    const $seqBPMUp = document.createElement("button");
+    $seqBPMUp.type = "button";
+    $seqBPMUp.className = "hud-seq-btn hud-seq-btn-sm";
+    $seqBPMUp.textContent = "+";
+    $seqBPMUp.title = "Increase BPM";
+    $seqBPMUp.setAttribute("aria-label", "Increase BPM");
+
+    const $seqStepCountLabel = document.createElement("span");
+    $seqStepCountLabel.className = "hud-seq-label";
+    $seqStepCountLabel.textContent = "STEPS";
+
+    const $seqStep8 = document.createElement("button");
+    $seqStep8.type = "button";
+    $seqStep8.className = "hud-seq-btn hud-seq-btn-sm hud-seq-step-select";
+    $seqStep8.textContent = "8";
+    $seqStep8.dataset.stepCount = "8";
+    $seqStep8.title = "8 steps";
+
+    const $seqStep16 = document.createElement("button");
+    $seqStep16.type = "button";
+    $seqStep16.className = "hud-seq-btn hud-seq-btn-sm hud-seq-step-select";
+    $seqStep16.textContent = "16";
+    $seqStep16.dataset.stepCount = "16";
+    $seqStep16.dataset.active = "1";
+    $seqStep16.title = "16 steps";
+
+    const $seqStep32 = document.createElement("button");
+    $seqStep32.type = "button";
+    $seqStep32.className = "hud-seq-btn hud-seq-btn-sm hud-seq-step-select";
+    $seqStep32.textContent = "32";
+    $seqStep32.dataset.stepCount = "32";
+    $seqStep32.title = "32 steps";
+
+    const $seqDirBtn = document.createElement("button");
+    $seqDirBtn.type = "button";
+    $seqDirBtn.className = "hud-seq-btn hud-seq-btn-sm";
+    $seqDirBtn.textContent = "→";
+    $seqDirBtn.title = "Direction: forward";
+    $seqDirBtn.dataset.direction = "forward";
+
+    $seqTransport.append(
+        $seqPlay, $seqStop,
+        $seqBPMLabel, $seqBPMDown, $seqBPMValue, $seqBPMUp,
+        $seqStepCountLabel, $seqStep8, $seqStep16, $seqStep32,
+        $seqDirBtn
+    );
+
+    const $seqGrid = document.createElement("div");
+    $seqGrid.className = "hud-seq-grid";
+
+    $seqPanel.append($seqTransport, $seqGrid);
+
+    const rebuildSeqGrid = () => {
+        $seqGrid.replaceChildren();
+        if (!sequencer) return;
+        const linkedPaths = sequencer.getLinkedParameters();
+        if (linkedPaths.length === 0) {
+            const $empty = document.createElement("div");
+            $empty.className = "hud-seq-empty";
+            $empty.textContent = "Link knobs with the S button to add parameters";
+            $seqGrid.appendChild($empty);
+            return;
+        }
+        const stepCount = sequencer.getStepCount();
+        linkedPaths.forEach((path) => {
+            const $row = document.createElement("div");
+            $row.className = "hud-seq-row";
+            const $label = document.createElement("span");
+            $label.className = "hud-seq-row-label";
+            const shortKey = path.slice(path.lastIndexOf("/") + 1);
+            $label.textContent = shortKey.length > 10 ? shortKey.slice(0, 9) + "…" : shortKey;
+            $label.title = path;
+            $row.appendChild($label);
+            for (let i = 0; i < stepCount; i++) {
+                const $cell = document.createElement("div");
+                $cell.className = "hud-seq-cell";
+                $cell.dataset.paramPath = path;
+                $cell.dataset.stepIndex = String(i);
+                if (i % 4 === 0) $cell.dataset.beat = "1";
+                const val = sequencer.getStepValue(path, i);
+                $cell.style.setProperty("--seq-value", String(val));
+                const $bar = document.createElement("div");
+                $bar.className = "hud-seq-cell-bar";
+                $cell.appendChild($bar);
+                $row.appendChild($cell);
+            }
+            $seqGrid.appendChild($row);
+        });
+    };
+
+    const highlightSeqStep = (stepIndex) => {
+        $seqGrid.querySelectorAll(".hud-seq-cell.active").forEach(($c) => $c.classList.remove("active"));
+        $seqGrid.querySelectorAll(`.hud-seq-cell[data-step-index="${stepIndex}"]`).forEach(($c) => $c.classList.add("active"));
+    };
+
+    const seqOnParamUpdate = (path, value) => {
+        if (!faustUIBridge || typeof faustUIBridge.setParamValue !== "function") return;
+        faustUIBridge.setParamValue(path, value, true);
+    };
+
+    const initSequencer = () => {
+        if (sequencer) sequencer.destroy();
+        sequencer = new StepSequencer();
+    };
+
+    const syncSeqToggleButtonStates = () => {
+        if (!sequencer) return;
+        $seqBPMValue.textContent = String(sequencer.getBPM());
+        $seqPlay.dataset.active = sequencer.isPlaying() ? "1" : "0";
+        [$seqStep8, $seqStep16, $seqStep32].forEach(($btn) => {
+            $btn.dataset.active = String(Number($btn.dataset.stepCount) === sequencer.getStepCount() ? 1 : 0);
+        });
+        const dirSymbols = { forward: "→", reverse: "←", pingpong: "↔" };
+        const dir = sequencer.getDirection();
+        $seqDirBtn.textContent = dirSymbols[dir] || "→";
+        $seqDirBtn.title = `Direction: ${dir}`;
+        $seqDirBtn.dataset.direction = dir;
+    };
+
+    refreshSeqPanelUI = () => { syncSeqToggleButtonStates(); rebuildSeqGrid(); };
+
+    // ── SEQ button toggle ──────────────────────────────────────────────────
+    $seqMode.addEventListener("click", () => {
+        if (!sequencer) initSequencer();
+        seqPanelOpen = !seqPanelOpen;
+        $seqPanel.dataset.open = seqPanelOpen ? "1" : "0";
+        $seqMode.dataset.active = seqPanelOpen ? "1" : "0";
+        $seqMode.setAttribute("aria-pressed", String(seqPanelOpen));
+        $panel.dataset.seqOpen = seqPanelOpen ? "1" : "0";
+        $divFaustUI.dataset.seqOpen = seqPanelOpen ? "1" : "0";
+        if (seqPanelOpen) { syncSeqToggleButtonStates(); rebuildSeqGrid(); }
+    });
+
+    // ── SEQ transport events ───────────────────────────────────────────────
+    $seqPlay.addEventListener("click", () => {
+        if (!sequencer) initSequencer();
+        if (sequencer.getLinkedParameters().length === 0) return;
+        sequencer.play(
+            (stepIndex) => highlightSeqStep(stepIndex),
+            (path, value) => seqOnParamUpdate(path, value)
+        );
+        syncSeqToggleButtonStates();
+    });
+
+    $seqStop.addEventListener("click", () => {
+        if (sequencer) { sequencer.stop(); highlightSeqStep(-1); }
+        syncSeqToggleButtonStates();
+    });
+
+    $seqBPMDown.addEventListener("click", () => {
+        if (!sequencer) return;
+        sequencer.setBPM(sequencer.getBPM() - 5);
+        $seqBPMValue.textContent = String(sequencer.getBPM());
+    });
+
+    $seqBPMUp.addEventListener("click", () => {
+        if (!sequencer) return;
+        sequencer.setBPM(sequencer.getBPM() + 5);
+        $seqBPMValue.textContent = String(sequencer.getBPM());
+    });
+
+    [$seqStep8, $seqStep16, $seqStep32].forEach(($btn) => {
+        $btn.addEventListener("click", () => {
+            if (!sequencer) return;
+            const wasPlaying = sequencer.isPlaying();
+            if (wasPlaying) sequencer.stop();
+            sequencer.setStepCount(Number($btn.dataset.stepCount));
+            syncSeqToggleButtonStates();
+            rebuildSeqGrid();
+            if (wasPlaying) {
+                sequencer.play(
+                    (stepIndex) => highlightSeqStep(stepIndex),
+                    (path, value) => seqOnParamUpdate(path, value)
+                );
+                syncSeqToggleButtonStates();
+            }
+        });
+    });
+
+    $seqDirBtn.addEventListener("click", () => {
+        if (!sequencer) return;
+        const dirs = ["forward", "reverse", "pingpong"];
+        const cur = dirs.indexOf(sequencer.getDirection());
+        sequencer.setDirection(dirs[(cur + 1) % dirs.length]);
+        syncSeqToggleButtonStates();
+    });
+
+    // ── SEQ grid cell interaction ──────────────────────────────────────────
+    $seqGrid.addEventListener("pointerdown", (event) => {
+        const $cell = event.target.closest(".hud-seq-cell");
+        if (!$cell || !sequencer) return;
+        const path = $cell.dataset.paramPath;
+        const stepIndex = Number($cell.dataset.stepIndex);
+        const currentVal = sequencer.getStepValue(path, stepIndex);
+        const newVal = currentVal >= 0.9 ? 0 : Math.min(1, currentVal + 0.25);
+        sequencer.setStepValue(path, stepIndex, newVal);
+        $cell.style.setProperty("--seq-value", String(newVal));
+    });
+
+    // ── Per-knob SEQ toggle delegation (capture phase to beat stopPropagation) ──
+    document.addEventListener("click", (event) => {
+        const $toggle = event.target.closest(".hud-knob-seq-toggle");
+        if (!$toggle || !sequencer) return;
+        const path = $toggle.dataset.paramAddress;
+        if (!path) return;
+        const wasLinked = $toggle.dataset.seqLinked === "1";
+        if (wasLinked) {
+            sequencer.unlinkParameter(path);
+            $toggle.dataset.seqLinked = "0";
+        } else {
+            const control = getDSPControl(path);
+            if (control) {
+                sequencer.linkParameter(control.address, control.min, control.max, control.step);
+            } else {
+                sequencer.linkParameter(path, 0, 1, null);
+            }
+            $toggle.dataset.seqLinked = "1";
+        }
+        if (seqPanelOpen) rebuildSeqGrid();
+    }, true);
+
     const $zoomOut = document.createElement("button");
     $zoomOut.type = "button";
     $zoomOut.className = "hud-control-btn hud-control-btn-zoom";
@@ -3486,6 +3942,10 @@ function mountHUDControls() {
         $random,
         $themePicker,
         $motionMode,
+        $midiMode,
+        $liveInput,
+        $audioInputPicker,
+        $seqMode,
         $globalCluster,
         $zoomOut,
         $zoomIn,
@@ -3499,8 +3959,9 @@ function mountHUDControls() {
     presetButtonReactiveItems.forEach(($item) => $item.classList.add("hud-hover-reactive-item"));
     const presetCardReactiveItems = [];
 
-    $strip.append($start, $reset, $zero, $random, $themePicker, $motionMode, $globalCluster, $zoomOut, $zoomIn, $scrollDown, $scrollUp, $fullscreen);
+    $strip.append($start, $reset, $zero, $random, $themePicker, $motionMode, $midiMode, $liveInput, $audioInputPicker, $seqMode, $globalCluster, $zoomOut, $zoomIn, $scrollDown, $scrollUp, $fullscreen);
     $panel.appendChild($strip);
+    $panel.appendChild($seqPanel);
     $modeButtonStrip.append($stockKnobToggle, $stockGroupLabel, $stockPresetLane);
     $modeStrip.append($stockKnobToggleSpacer, $stockGroupSpacer, $stockModeCardLane);
 
@@ -4949,6 +5410,73 @@ function mountHUDControls() {
     };
     refreshMotionControlUI();
 
+    refreshMIDIControlUI = () => {
+        const active = midiInputState.active;
+        const inputCount = midiInputState.access ? midiInputState.access.inputs.size : 0;
+        $midiMode.dataset.active = active ? "1" : "0";
+        $midiMode.disabled = !midiInputState.supported;
+        $midiMode.setAttribute("aria-pressed", active ? "true" : "false");
+        if (!midiInputState.supported) {
+            $midiMode.title = "Web MIDI is not supported in this browser";
+            $midiMode.setAttribute("aria-label", "MIDI input unavailable: Web MIDI is not supported");
+            return;
+        }
+        $midiMode.title = active
+            ? `Disable MIDI input (${inputCount} input${inputCount === 1 ? "" : "s"})`
+            : "Enable MIDI input";
+        $midiMode.setAttribute("aria-label", active ? "Disable MIDI input" : "Enable MIDI input");
+    };
+    refreshMIDIControlUI();
+
+    refreshAudioInputDeviceListUI = () => {
+        $audioInputSelect.replaceChildren();
+        $audioInputSelect.appendChild(new Option("DEFAULT", ""));
+        liveInputState.devices.forEach((device, index) => {
+            const label = device.label || `INPUT ${index + 1}`;
+            $audioInputSelect.appendChild(new Option(label, device.deviceId));
+        });
+        const hasSelectedDevice = Array.from($audioInputSelect.options).some((option) => option.value === liveInputState.selectedDeviceId);
+        if (!hasSelectedDevice) liveInputState.selectedDeviceId = "";
+        $audioInputSelect.value = liveInputState.selectedDeviceId;
+    };
+    refreshAudioInputDeviceListUI();
+
+    refreshLiveInputControlUI = () => {
+        const inputCount = getFaustAudioInputCount();
+        const available = liveInputState.supported && inputCount > 0;
+        const active = liveInputState.active;
+        $liveInput.dataset.active = active ? "1" : "0";
+        $liveInput.dataset.inputUnavailable = available ? "0" : "1";
+        $liveInput.disabled = !available;
+        $liveInput.setAttribute("aria-pressed", active ? "true" : "false");
+        $audioInputSelect.disabled = !available;
+        $audioInputPicker.dataset.disabled = available ? "0" : "1";
+        if (!liveInputState.supported) {
+            $liveInput.title = "Live audio input is not supported in this browser";
+            $liveInput.setAttribute("aria-label", "Live audio input unavailable: browser does not support media devices");
+            $audioInputSelect.title = "Live audio input is not supported in this browser";
+            return;
+        }
+        if (inputCount <= 0) {
+            $liveInput.title = "Current Faust DSP exposes 0 live audio input channels";
+            $liveInput.setAttribute("aria-label", "Live audio input unavailable: current Faust DSP has no audio inputs");
+            $audioInputSelect.title = "Current Faust DSP exposes 0 live audio input channels";
+            return;
+        }
+        $liveInput.title = active ? "Disable live audio input" : "Enable live audio input";
+        $liveInput.setAttribute("aria-label", active ? "Disable live audio input" : "Enable live audio input");
+        $audioInputSelect.title = "Select live audio input source";
+    };
+    refreshLiveInputControlUI();
+
+    if (!liveInputState.deviceChangeBound && navigator.mediaDevices?.addEventListener) {
+        navigator.mediaDevices.addEventListener("devicechange", () => {
+            refreshAudioInputDevices().catch((error) => console.warn("Unable to refresh audio input devices:", error));
+        });
+        liveInputState.deviceChangeBound = true;
+    }
+    refreshAudioInputDevices().catch((error) => console.warn("Unable to enumerate audio input devices:", error));
+
     refreshMotionGlyphUI = () => {
         motionCubeController?.refresh();
     };
@@ -5171,6 +5699,34 @@ function mountHUDControls() {
         });
     });
 
+    $midiMode.addEventListener("click", (event) => {
+        event.stopPropagation();
+        withButtonBusyState($midiMode, async () => {
+            await toggleMIDIInputMode();
+        }).finally(refreshMIDIControlUI);
+    });
+
+    $liveInput.addEventListener("click", (event) => {
+        event.stopPropagation();
+        resumeAudioContext();
+        withButtonBusyState($liveInput, async () => {
+            await toggleLiveAudioInputMode();
+        }).finally(refreshLiveInputControlUI);
+    });
+
+    $audioInputPicker.addEventListener("pointerdown", (event) => {
+        event.stopPropagation();
+    });
+
+    $audioInputSelect.addEventListener("change", (event) => {
+        event.stopPropagation();
+        liveInputState.selectedDeviceId = $audioInputSelect.value || "";
+        if (!liveInputState.active) return;
+        withButtonBusyState($liveInput, async () => {
+            await startLiveAudioInput();
+        }).finally(refreshLiveInputControlUI);
+    });
+
     $zoomIn.addEventListener("click", (event) => {
         event.stopPropagation();
         if (!faustUIBridge || typeof faustUIBridge.zoomIn !== "function") return;
@@ -5317,41 +5873,188 @@ function resumeAudioContext() {
     }
 }
 
-// Function to start MIDI
-function startMIDI() {
-    // Check if the browser supports the Web MIDI API
-    if (navigator.requestMIDIAccess) {
-        navigator.requestMIDIAccess().then(
-            midiAccess => {
-                console.log("MIDI Access obtained.");
-                for (let input of midiAccess.inputs.values()) {
-                    input.onmidimessage = (event) => faustNode.midiMessage(event.data);
-                    console.log(`Connected to input: ${input.name}`);
-                }
-            },
-            () => console.error("Failed to access MIDI devices.")
-        );
+function getFaustAudioInputCount() {
+    const methodCount = typeof faustNode?.getNumInputs === "function" ? Number(faustNode.getNumInputs()) : NaN;
+    if (Number.isFinite(methodCount)) return Math.max(0, methodCount);
+    const propertyCount = Number(faustNode?.numberOfInputs);
+    return Number.isFinite(propertyCount) ? Math.max(0, propertyCount) : 0;
+}
+
+function handleMIDIMessage(event) {
+    if (!midiInputState.active) return;
+    if (!faustNode || typeof faustNode.midiMessage !== "function") return;
+    faustNode.midiMessage(event.data);
+}
+
+function bindMIDIInput(input) {
+    if (!input || input.type !== "input" || midiInputState.inputs.has(input)) return;
+    if (typeof input.addEventListener === "function") {
+        input.addEventListener("midimessage", handleMIDIMessage);
     } else {
+        input.onmidimessage = handleMIDIMessage;
+    }
+    midiInputState.inputs.add(input);
+    console.log(`Connected to MIDI input: ${input.name || "unnamed"}`);
+}
+
+function unbindMIDIInput(input) {
+    if (!input) return;
+    if (typeof input.removeEventListener === "function") {
+        input.removeEventListener("midimessage", handleMIDIMessage);
+    }
+    if (input.onmidimessage === handleMIDIMessage) {
+        input.onmidimessage = null;
+    }
+    midiInputState.inputs.delete(input);
+}
+
+function handleMIDIStateChange(event) {
+    const port = event?.port;
+    if (!port || port.type !== "input") {
+        refreshMIDIControlUI();
+        return;
+    }
+    if (midiInputState.active && port.state === "connected") {
+        bindMIDIInput(port);
+    } else if (port.state === "disconnected") {
+        unbindMIDIInput(port);
+    }
+    refreshMIDIControlUI();
+}
+
+async function startMIDI() {
+    await faustReady;
+    if (!midiInputState.supported) {
         console.log("Web MIDI API is not supported in this browser.");
+        refreshMIDIControlUI();
+        return false;
+    }
+    if (!faustNode || typeof faustNode.midiMessage !== "function") {
+        console.warn("Faust node is not ready for MIDI input.");
+        refreshMIDIControlUI();
+        return false;
+    }
+    if (!midiInputState.access) {
+        midiInputState.access = await navigator.requestMIDIAccess({ sysex: false });
+        console.log("MIDI Access obtained.");
+    }
+    if (!midiInputState.stateChangeBound) {
+        if (typeof midiInputState.access.addEventListener === "function") {
+            midiInputState.access.addEventListener("statechange", handleMIDIStateChange);
+        } else {
+            midiInputState.access.onstatechange = handleMIDIStateChange;
+        }
+        midiInputState.stateChangeBound = true;
+    }
+    midiInputState.active = true;
+    for (const input of midiInputState.access.inputs.values()) {
+        bindMIDIInput(input);
+    }
+    midiHandlersBound = true;
+    refreshMIDIControlUI();
+    return true;
+}
+
+function stopMIDI() {
+    for (const input of Array.from(midiInputState.inputs)) {
+        unbindMIDIInput(input);
+        console.log(`Disconnected from MIDI input: ${input.name || "unnamed"}`);
+    }
+    midiInputState.active = false;
+    midiHandlersBound = false;
+    refreshMIDIControlUI();
+}
+
+async function toggleMIDIInputMode() {
+    if (midiInputState.active) {
+        stopMIDI();
+        return;
+    }
+    try {
+        await startMIDI();
+    } catch (error) {
+        console.warn("MIDI input was not enabled:", error);
+        stopMIDI();
     }
 }
 
-// Function to stop MIDI
-function stopMIDI() {
-    // Check if the browser supports the Web MIDI API
-    if (navigator.requestMIDIAccess) {
-        navigator.requestMIDIAccess().then(
-            midiAccess => {
-                console.log("MIDI Access obtained.");
-                for (let input of midiAccess.inputs.values()) {
-                    input.onmidimessage = null;
-                    console.log(`Disconnected from input: ${input.name}`);
-                }
-            },
-            () => console.error("Failed to access MIDI devices.")
-        );
-    } else {
-        console.log("Web MIDI API is not supported in this browser.");
+function stopMediaStreamNode(streamNode) {
+    if (!streamNode) return;
+    try {
+        streamNode.disconnect(faustNode);
+    } catch (error) {
+        try {
+            streamNode.disconnect();
+        } catch (disconnectError) {
+            console.warn("Unable to disconnect live audio input node:", disconnectError || error);
+        }
+    }
+    streamNode.mediaStream?.getTracks?.().forEach((track) => track.stop());
+}
+
+async function refreshAudioInputDevices() {
+    if (!liveInputState.supported) {
+        liveInputState.devices = [];
+        refreshAudioInputDeviceListUI();
+        refreshLiveInputControlUI();
+        return;
+    }
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    liveInputState.devices = devices.filter((device) => device.kind === "audioinput");
+    refreshAudioInputDeviceListUI();
+    refreshLiveInputControlUI();
+}
+
+async function startLiveAudioInput() {
+    await faustReady;
+    if (getFaustAudioInputCount() <= 0) {
+        console.warn("Live audio input is unavailable because the current Faust DSP exposes 0 input channels.");
+        stopLiveAudioInput();
+        refreshLiveInputControlUI();
+        return false;
+    }
+    if (!liveInputState.supported) {
+        console.warn("Live audio input is not supported in this browser.");
+        refreshLiveInputControlUI();
+        return false;
+    }
+    await ensureAudioActivated();
+    const { connectToAudioInput } = await import(CREATE_NODE_MODULE_SPEC);
+    const oldStreamNode = liveInputState.streamNode;
+    const nextStreamNode = await connectToAudioInput(
+        audioContext,
+        liveInputState.selectedDeviceId || null,
+        faustNode,
+        oldStreamNode
+    );
+    if (oldStreamNode && oldStreamNode !== nextStreamNode) {
+        stopMediaStreamNode(oldStreamNode);
+    }
+    liveInputState.streamNode = nextStreamNode || null;
+    liveInputState.active = Boolean(liveInputState.streamNode);
+    await refreshAudioInputDevices();
+    refreshLiveInputControlUI();
+    return liveInputState.active;
+}
+
+function stopLiveAudioInput() {
+    stopMediaStreamNode(liveInputState.streamNode);
+    liveInputState.streamNode = null;
+    liveInputState.active = false;
+    refreshLiveInputControlUI();
+}
+
+async function toggleLiveAudioInputMode() {
+    if (liveInputState.active) {
+        stopLiveAudioInput();
+        return;
+    }
+    try {
+        await startLiveAudioInput();
+    } catch (error) {
+        console.warn("Live audio input was not enabled:", error);
+        stopLiveAudioInput();
+        await refreshAudioInputDevices().catch((refreshError) => console.warn("Unable to refresh audio input devices:", refreshError));
     }
 }
 
@@ -5368,24 +6071,10 @@ async function ensureAudioActivated() {
         await faustReady;
         if (!faustNode) throw new Error("Faust node is not ready.");
 
-        // Import the create-node module
-        const { connectToAudioInput } = await import(CREATE_NODE_MODULE_SPEC);
-
-        // Initialize the MIDI setup
-        if (!midiHandlersBound) {
-            startMIDI();
-            midiHandlersBound = true;
-        }
-
         // Connect the Faust node to the audio output only once.
         if (!audioGraphConnected) {
             faustNode.connect(audioContext.destination);
             audioGraphConnected = true;
-        }
-
-        // Connect the Faust node to the audio input
-        if (faustNode.numberOfInputs > 0) {
-            await connectToAudioInput(audioContext, null, faustNode, null);
         }
 
         // Resume the AudioContext
@@ -5395,6 +6084,7 @@ async function ensureAudioActivated() {
 
         audioActivated = true;
         refreshStartControlUI();
+        refreshLiveInputControlUI();
     })();
 
     try {
@@ -5412,19 +6102,21 @@ async function activateMIDISensors() {
 // Function to suspend AudioContext and deactivate MIDI on user interaction
 async function deactivateAudioMIDISensors() {
 
+    stopLiveAudioInput();
+
     // Suspend the AudioContext
     if (audioContext.state === 'running') {
         await audioContext.suspend();
     }
 
     // Deactivate the MIDI setup
-    if (midiHandlersBound && FAUST_DSP_VOICES > 0) {
+    if (midiHandlersBound || midiInputState.active) {
         stopMIDI();
-        midiHandlersBound = false;
     }
 
     audioActivated = false;
     refreshStartControlUI();
+    refreshLiveInputControlUI();
 }
 
 // Deactivate AudioContext, MIDI and Sensors on user interaction

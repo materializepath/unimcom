@@ -66,6 +66,7 @@ const createFaustNode = async (audioContext, dspName = "template", voices = 0, s
     } else {
         // Create a standard Faust audio node
         const generator = new FaustMonoDspGenerator();
+        const sp = true; // Force ScriptProcessor mode — avoids COOP/COEP header requirement
         faustNode = await generator.createNode(
             audioContext,
             dspName,
@@ -175,7 +176,7 @@ const KNOB_MANUAL_MIN_COLUMNS = 1;
 const KNOB_MIN_COLUMN_PIXEL_WIDTH = 72;
 const HUD_BAR_COUNT = 12;
 const HUD_SPARK_HISTORY = 24;
-const HUD_ASSET_VERSION = "20260314r35";
+const HUD_ASSET_VERSION = "20260521seq4";
 const HUD_CONTROL_STRIP_HEIGHT_FALLBACK = 196;
 const HUD_FONT_FAMILY = "\"Space Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace";
 const HAPTIC_TICK_DURATION_MS = 120;
@@ -1205,6 +1206,41 @@ function applyHUDStyles(faustUI, theme) {
 
             $overlay.append($header, $meta, $bars, $spark, $range);
             component.container.appendChild($overlay);
+
+            // SEQ toggle button (per-knob)
+            if (component.container.dataset.hudSeqToggle !== "1") {
+                component.container.dataset.hudSeqToggle = "1";
+                const $seqToggle = document.createElement("button");
+                $seqToggle.className = "hud-knob-seq-toggle";
+                $seqToggle.dataset.paramAddress = (component.state && component.state.address) || "";
+                $seqToggle.dataset.seqLinked = "0";
+                $seqToggle.textContent = "S";
+                Object.assign($seqToggle.style, {
+                    position: "absolute",
+                    bottom: "4px",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: "20px",
+                    height: "18px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "0",
+                    margin: "0",
+                    fontSize: "10px",
+                    lineHeight: "1",
+                    fontFamily: HUD_FONT_FAMILY,
+                    fontWeight: "700",
+                    cursor: "pointer",
+                    pointerEvents: "auto",
+                    zIndex: "3",
+                    textTransform: "uppercase",
+                });
+                $seqToggle.addEventListener("click", (event) => {
+                    event.stopPropagation();
+                });
+                component.container.appendChild($seqToggle);
+            }
 
             const baseNameSize = Number.parseFloat(HUD_TEXT_SIZES.name) || 8.4;
             const baseIndexSize = Number.parseFloat(HUD_TEXT_SIZES.index) || 7.8;

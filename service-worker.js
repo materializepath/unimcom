@@ -5,9 +5,9 @@ const FAUST_DSP_VOICES = 0;
 // Set to true if the DSP has an effect
 const FAUST_DSP_HAS_EFFECT = false;
 
-const CACHE_NAME = "ambient_m7_2.0_webapp_20260315_r114"; // Cache name with versioning
-const INDEX_ASSET_VERSION = "20260315r113";
-const CREATE_NODE_MODULE_VERSION = "20260315r44";
+const CACHE_NAME = "ambient_m7_3.0_webapp_20260521d"; // Cache name with versioning
+const INDEX_ASSET_VERSION = "20260521seq4";
+const CREATE_NODE_MODULE_VERSION = "20260521seq4";
 
 /**
  * List of essential resources required for the **Mono DSP** version of the application.

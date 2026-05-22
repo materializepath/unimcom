@@ -112,6 +112,10 @@
             box-shadow: inset 0 0 0 1px var(--hud-grid, rgba(210, 214, 218, 0.12));
         }
 
+        #div-faust-ui[data-seq-open="1"] {
+            overflow: visible;
+        }
+
         #site-footer {
             --footer-shell-width: clamp(560px, 68vw, 860px);
             --footer-console-toggle-size: 20px;
@@ -929,6 +933,13 @@
             box-sizing: border-box;
         }
 
+        #hud-control-panel[data-seq-open="1"] {
+            padding-left: 0;
+            padding-right: 0;
+            left: calc(-1 * var(--hud-shell-inset-x));
+            right: calc(-1 * var(--hud-shell-inset-x));
+        }
+
         #hud-control-panel::before {
             content: "";
             position: absolute;
@@ -1270,7 +1281,9 @@
             }
         }
 
-        .hud-control-btn.hud-control-btn-motion {
+        .hud-control-btn.hud-control-btn-motion,
+        .hud-control-btn.hud-control-btn-midi,
+        .hud-control-btn.hud-control-btn-live-input {
             width: var(--hud-control-row-height);
             min-width: var(--hud-control-row-height);
             max-width: var(--hud-control-row-height);
@@ -1282,18 +1295,43 @@
             color: rgba(223, 231, 242, 0.78);
         }
 
-        .hud-control-btn.hud-control-btn-motion[data-active="1"]:not(:disabled) {
+        .hud-control-btn.hud-control-btn-motion[data-active="1"]:not(:disabled),
+        .hud-control-btn.hud-control-btn-midi[data-active="1"]:not(:disabled),
+        .hud-control-btn.hud-control-btn-live-input[data-active="1"]:not(:disabled) {
             animation: hud-motion-active-breathe 2.35s ease-in-out infinite;
             will-change: transform, border-color, box-shadow;
         }
 
-        .hud-control-btn.hud-control-btn-motion[data-active="1"] {
+        .hud-control-btn.hud-control-btn-motion[data-active="1"],
+        .hud-control-btn.hud-control-btn-midi[data-active="1"],
+        .hud-control-btn.hud-control-btn-live-input[data-active="1"] {
             border-color: var(--hud-border-active, rgba(71, 229, 186, 1));
             color: var(--hud-border-active, rgba(71, 229, 186, 1));
             box-shadow:
                 inset 0 0 0 1px rgba(71, 229, 186, 0.2),
                 0 0 16px rgba(71, 229, 186, 0.24),
                 0 0 0 1px rgba(0, 0, 0, 0.66);
+        }
+
+        .hud-mini-control-glyph {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            font-size: clamp(8px, 0.64vw, 10px);
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        .hud-control-btn.hud-control-btn-live-input[data-input-unavailable="1"] .hud-mini-control-glyph {
+            opacity: 0.54;
+        }
+
+        .hud-audio-input-picker {
+            min-width: clamp(128px, 10vw, 164px);
         }
 
         .hud-motion-cube-glyph {
@@ -1318,7 +1356,9 @@
         }
 
         @media (prefers-reduced-motion: reduce) {
-            .hud-control-btn.hud-control-btn-motion[data-active="1"]:not(:disabled) {
+            .hud-control-btn.hud-control-btn-motion[data-active="1"]:not(:disabled),
+            .hud-control-btn.hud-control-btn-midi[data-active="1"]:not(:disabled),
+            .hud-control-btn.hud-control-btn-live-input[data-active="1"]:not(:disabled) {
                 animation: none;
                 border-color: rgba(71, 229, 186, 0.62);
                 box-shadow:
@@ -1327,6 +1367,315 @@
                     0 0 0 1px rgba(0, 0, 0, 0.66);
             }
         }
+
+        /* ─── step sequencer ─────────────────────────────────── */
+
+        /* SEQ button — matches motion/midi/live-input dimensions and style */
+        .hud-control-btn.hud-control-btn-seq {
+            width: var(--hud-control-row-height);
+            min-width: var(--hud-control-row-height);
+            max-width: var(--hud-control-row-height);
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 0;
+            color: rgba(223, 231, 242, 0.78);
+        }
+
+        .hud-control-btn.hud-control-btn-seq[data-active="1"] {
+            border-color: var(--hud-border-active, rgba(71, 229, 186, 1));
+            color: var(--hud-border-active, rgba(71, 229, 186, 1));
+            box-shadow:
+                inset 0 0 0 1px rgba(71, 229, 186, 0.2),
+                0 0 16px rgba(71, 229, 186, 0.24),
+                0 0 0 1px rgba(0, 0, 0, 0.66);
+        }
+
+        .hud-control-btn.hud-control-btn-seq[data-active="1"]:not(:disabled) {
+            animation: hud-motion-active-breathe 2.35s ease-in-out infinite;
+            will-change: transform, border-color, box-shadow;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .hud-control-btn.hud-control-btn-seq[data-active="1"]:not(:disabled) {
+                animation: none;
+                border-color: rgba(71, 229, 186, 0.62);
+                box-shadow:
+                    inset 0 0 0 1px rgba(71, 229, 186, 0.18),
+                    0 0 12px rgba(71, 229, 186, 0.14),
+                    0 0 0 1px rgba(0, 0, 0, 0.66);
+            }
+        }
+
+        /* sequencer panel — collapsible, sits between control strip and Faust UI */
+        .hud-seq-panel {
+            width: 100%;
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition:
+                max-height 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.24s ease;
+            background:
+                linear-gradient(180deg, rgba(6, 8, 10, 0.92) 0%, rgba(4, 5, 7, 0.96) 100%);
+            border: 1px solid rgba(220, 224, 228, 0.12);
+            border-left: none;
+            border-right: none;
+            border-radius: 0;
+            box-sizing: border-box;
+            font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            color: var(--hud-ink, rgba(232, 236, 240, 0.92));
+        }
+
+        .hud-seq-panel[data-open="1"] {
+            max-height: 420px;
+            opacity: 1;
+        }
+
+        /* transport controls */
+        .hud-seq-transport {
+            display: flex;
+            align-items: center;
+            gap: clamp(6px, 0.5vw, 10px);
+            padding: clamp(6px, 0.5vw, 10px) clamp(8px, 0.6vw, 12px);
+            border-bottom: 1px solid rgba(220, 224, 228, 0.12);
+            flex-wrap: wrap;
+            min-height: 36px;
+        }
+
+        .hud-seq-transport .hud-seq-btn {
+            appearance: none;
+            border: 1px solid rgba(220, 224, 228, 0.18);
+            background:
+                linear-gradient(180deg, rgba(220, 224, 228, 0.08) 0%, rgba(0, 0, 0, 0.24) 100%);
+            color: rgba(223, 231, 242, 0.82);
+            font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: clamp(11px, 0.82vw, 13px);
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            padding: 0 clamp(8px, 0.6vw, 12px);
+            min-height: 28px;
+            min-width: 44px;
+            border-radius: 0;
+            cursor: pointer;
+            text-transform: uppercase;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            transition: border-color 0.15s ease, color 0.15s ease;
+        }
+
+        .hud-seq-transport .hud-seq-btn:hover {
+            border-color: rgba(220, 224, 228, 0.36);
+            color: rgba(232, 236, 240, 1);
+        }
+
+        .hud-seq-transport .hud-seq-btn[data-active="1"] {
+            border-color: var(--hud-border-active, rgba(71, 229, 186, 1));
+            color: var(--hud-border-active, rgba(71, 229, 186, 1));
+            box-shadow:
+                inset 0 0 0 1px rgba(71, 229, 186, 0.12),
+                0 0 8px rgba(71, 229, 186, 0.12);
+        }
+
+        .hud-seq-transport .hud-seq-label {
+            font-size: clamp(10px, 0.72vw, 12px);
+            font-weight: 400;
+            color: rgba(180, 186, 196, 0.6);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .hud-seq-transport .hud-seq-value {
+            font-size: clamp(12px, 0.9vw, 15px);
+            font-weight: 700;
+            color: rgba(223, 231, 242, 0.88);
+            letter-spacing: 0.02em;
+            min-width: 2.2em;
+            text-align: center;
+            user-select: none;
+        }
+
+        .hud-seq-transport .hud-seq-value:hover {
+            color: rgba(232, 236, 240, 1);
+        }
+
+        .hud-seq-transport .hud-seq-separator {
+            flex: 1 1 auto;
+            min-width: 4px;
+        }
+
+        /* step count selector pills */
+        .hud-seq-step-select {
+            display: inline-flex;
+            align-items: stretch;
+            gap: 0;
+        }
+
+        .hud-seq-step-select .hud-seq-btn {
+            border-right-width: 0;
+            min-width: 36px;
+            padding: 0 6px;
+        }
+
+        .hud-seq-step-select .hud-seq-btn:last-child {
+            border-right-width: 1px;
+        }
+
+        .hud-seq-step-select .hud-seq-btn[data-selected="1"] {
+            background: rgba(71, 229, 186, 0.08);
+            border-color: rgba(71, 229, 186, 0.36);
+            color: rgba(71, 229, 186, 0.92);
+        }
+
+        /* step grid */
+        .hud-seq-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: clamp(6px, 0.5vw, 10px) 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(220, 224, 228, 0.16) transparent;
+        }
+
+        .hud-seq-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            min-height: 24px;
+        }
+
+        .hud-seq-row-label {
+            font-size: clamp(9px, 0.6vw, 11px);
+            font-weight: 400;
+            color: rgba(180, 186, 196, 0.5);
+            letter-spacing: 0.02em;
+            min-width: clamp(56px, 4.5vw, 72px);
+            max-width: clamp(56px, 4.5vw, 72px);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            line-height: 24px;
+            flex-shrink: 0;
+        }
+
+        .hud-seq-cell {
+            flex: 1 1 0;
+            min-width: 20px;
+            height: 24px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            box-sizing: border-box;
+            transition: background 0.1s ease;
+            touch-action: none;
+            border: 1px solid rgba(220, 224, 228, 0.14);
+        }
+
+        .hud-seq-cell + .hud-seq-cell {
+            border-left: none;
+        }
+
+        .hud-seq-cell::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 1px;
+            right: 1px;
+            height: calc(var(--seq-value, 0) * 100%);
+            max-height: 100%;
+            background: rgba(223, 231, 242, 0.22);
+            border-radius: 1px 1px 0 0;
+            transition: height 0.08s ease, background 0.12s ease;
+            pointer-events: none;
+        }
+
+        .hud-seq-cell:hover::after {
+            background: rgba(223, 231, 242, 0.38);
+        }
+
+        .hud-seq-cell[data-value="0"]::after {
+            height: 2px;
+            background: rgba(220, 224, 228, 0.08);
+        }
+
+        .hud-seq-cell.active {
+            background: rgba(71, 229, 186, 0.06);
+        }
+
+        .hud-seq-cell.active::after {
+            background: rgba(71, 229, 186, 0.5);
+        }
+
+        .hud-seq-cell.active:hover::after {
+            background: rgba(71, 229, 186, 0.68);
+        }
+
+        /* beat marker every 4 steps */
+        .hud-seq-cell[data-beat="1"] {
+            border-left: 1px solid rgba(220, 224, 228, 0.15);
+        }
+
+        /* per-knob SEQ toggle — centered at bottom of each knob overlay */
+        .hud-knob-seq-toggle {
+            appearance: none;
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            min-width: 18px;
+            height: 18px;
+            min-height: 16px;
+            padding: 0;
+            margin: 0;
+            border: 1px solid rgba(220, 224, 228, 0.25);
+            border-radius: 0;
+            background: rgba(8, 10, 14, 0.85);
+            color: rgba(180, 186, 196, 0.55);
+            font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            box-sizing: border-box;
+            transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        .hud-knob-seq-toggle:hover {
+            border-color: rgba(220, 224, 228, 0.45);
+            background: rgba(14, 16, 20, 0.92);
+            color: rgba(220, 224, 228, 0.82);
+        }
+
+        .hud-knob-seq-toggle[data-seq-linked="1"] {
+            border-color: var(--hud-border-active, rgba(71, 229, 186, 0.55));
+            color: var(--hud-border-active, rgba(71, 229, 186, 0.95));
+            background: rgba(71, 229, 186, 0.12);
+        }
+
+        .hud-knob-seq-toggle[data-seq-linked="1"]:hover {
+            border-color: var(--hud-border-active, rgba(71, 229, 186, 0.80));
+            color: var(--hud-border-active, rgba(71, 229, 186, 1));
+            background: rgba(71, 229, 186, 0.18);
+        }
+
+        /* ─── end step sequencer ─────────────────────────────── */
 
         .hud-control-btn.hud-control-btn-zoom {
             width: var(--hud-control-row-height);
@@ -1581,6 +1930,15 @@
         .hud-theme-select:focus-visible {
             outline: 1px solid var(--hud-border-active, rgba(71, 229, 186, 1));
             outline-offset: 2px;
+        }
+
+        .hud-theme-select:disabled {
+            cursor: default;
+            opacity: 0.58;
+        }
+
+        .hud-theme-picker[data-disabled="1"] {
+            opacity: 0.65;
         }
 
         .hud-theme-select option {
@@ -2638,7 +2996,7 @@
             </div>
         </div>
     </footer>
-    <script src="./index.js?v=20260315r113"></script>
+    <script src="./index.js?v=20260521seq4"></script>
 </body>
 
 </html>
