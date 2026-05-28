@@ -64,6 +64,8 @@ let refreshSeqPanelUI = () => {};
 let refreshPresetShadeUI = () => {};
 let refreshUserPresetButtonsUIExternal = () => {};
 let refreshFooterPresetTransferConsoleUI = () => {};
+let runQuickPresetMorphExternal = () => false;
+let clearPresetMorphIndicatorsExternal = () => {};
 let destroyMotionCubeGlyph = () => {};
 let motionCubeModulePromise = null;
 let zoomResizeHandler = null;
@@ -256,14 +258,14 @@ const FOOTER_CONSOLE_BOOT_MESSAGES = Object.freeze([
     "// PATH:EDITIONS-BRINGS YOU:",
     "UNIMCOM.MKI.UNIVERSAL.MATTER.COMPILER",
     "v.0.9.2. / DSPv.0.3.2",
-    "URL: https://mcv09.materialize.fun",
+    "URL: https://unimcom.materialize.fun",
     "CONSOLE|TERMINAL: ASCII GRFX / WAREZ .nfo",
 ]);
 const FOOTER_CONSOLE_BOOT_COMMAND_HINTS = Object.freeze([
     "CMDS: /help /export /load /paste",
     "NEXT: /record [soon] /clear /slots",
 ]);
-const FOOTER_CONSOLE_BOOT_TICKER = "PATH:EDITIONS // UNIMCOM.MKI.UNIVERSAL.MATTER.COMPILER // v.0.9.2. / DSPv.0.3.2 // URL: https://mcv09.materialize.fun // CONSOLE|TERMINAL: ASCII GRFX / WAREZ .nfo // CMDS: /help /export /load /paste // NEXT: /record [soon] /clear /slots //";
+const FOOTER_CONSOLE_BOOT_TICKER = "PATH:EDITIONS // UNIMCOM.MKI.UNIVERSAL.MATTER.COMPILER // v.0.9.2. / DSPv.0.3.2 // URL: https://unimcom.materialize.fun // CONSOLE|TERMINAL: ASCII GRFX / WAREZ .nfo // CMDS: /help /export /load /paste // NEXT: /record [soon] /clear /slots //";
 const USER_PRESET_SLOT_IDS = Object.freeze(
     Array.from({ length: USER_PRESET_SLOT_COUNT }, (_, index) => `user_${String(index + 1).padStart(2, "0")}`)
 );
@@ -384,6 +386,7 @@ const faustReady = new Promise((resolve, reject) => {
 /**
  * @typedef {{
  *   id: string;
+ *   label: string;
  *   values: Record<string, number> | null;
  *   updatedAt: string;
  *   saved: boolean;
@@ -820,6 +823,7 @@ function completeModeValues(values) {
 function createEmptyUserPresetSlot(id) {
     return {
         id,
+        label: "",
         values: null,
         updatedAt: "",
         saved: false,
@@ -837,6 +841,7 @@ function normalizeStoredUserPresetSlot(id, raw) {
     }
     return {
         id,
+        label: typeof raw.label === "string" ? raw.label : "",
         values: completeModeValues(raw.values),
         updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : "",
         saved: true,
@@ -869,6 +874,7 @@ function persistUserPresetSlots(slots) {
         const payload = Array.isArray(slots)
             ? slots.filter((slot) => slot && slot.saved && slot.values).map((slot) => ({
                 id: slot.id,
+                label: typeof slot.label === "string" ? slot.label : "",
                 values: slot.values,
                 updatedAt: slot.updatedAt,
             }))
@@ -2696,6 +2702,67 @@ function buildModePresetEntries(preset) {
 }
 
 /**
+ * Normalize flexible agent-facing user preset slot inputs.
+ * Accepts canonical IDs (`user_01`), numbers (`1`), and digit strings (`"1"`).
+ *
+ * @param {string | number} slotId
+ * @returns {string}
+ */
+function normalizeUserPresetSlotId(slotId) {
+    if (typeof slotId === "number" && Number.isFinite(slotId)) {
+        return `user_${String(Math.trunc(slotId)).padStart(2, "0")}`;
+    }
+    if (typeof slotId !== "string") return "";
+    const trimmed = slotId.trim();
+    if (!trimmed) return "";
+    if (/^\d+$/.test(trimmed)) {
+        return `user_${trimmed.padStart(2, "0")}`;
+    }
+    return trimmed;
+}
+
+/**
+ * Converts agent-facing param input into valid morph entries with control metadata.
+ *
+ * @param {Record<string, number> | { path: string; value: number }[] | null | undefined} targets
+ * @returns {{ path: string; value: number; control: DSPControl }[]}
+ */
+function buildAgentPresetEntries(targets) {
+    if (Array.isArray(targets)) {
+        /** @type {Record<string, number>} */
+        const values = {};
+        targets.forEach((entry) => {
+            if (!entry || typeof entry !== "object") return;
+            const path = typeof entry.path === "string" ? entry.path : "";
+            const value = Number(entry.value);
+            if (!path || !Number.isFinite(value)) return;
+            values[path] = value;
+        });
+        return buildModePresetEntriesFromValues(values);
+    }
+    if (targets && typeof targets === "object") {
+        return buildModePresetEntriesFromValues(targets);
+    }
+    return [];
+}
+
+/**
+ * @param {string} path
+ * @param {number} value
+ * @returns {{ path: string; value: number; control: DSPControl } | null}
+ */
+function normalizeAgentParamEntry(path, value) {
+    const control = getDSPControl(path);
+    const numeric = Number(value);
+    if (!control || !Number.isFinite(numeric)) return null;
+    return {
+        path: control.address,
+        control,
+        value: quantizeControlValue(control, numeric),
+    };
+}
+
+/**
  * @param {number} min
  * @param {number} max
  * @returns {number}
@@ -2803,7 +2870,10 @@ async function createMotionCubeGlyph($button, $host) {
 
     const syncPalette = () => {
         const styles = getComputedStyle($button);
-        const color = styles.color || "#4cd3b7";
+        let color = styles.color || "#4cd3b7";
+        // Strip alpha channel — THREE.Color.setStyle ignores it and emits a warning
+        const rgbaMatch = color.match(/^rgba\((\d+),\s*(\d+),\s*(\d+)/);
+        if (rgbaMatch) color = `rgb(${rgbaMatch[1]},${rgbaMatch[2]},${rgbaMatch[3]})`;
         if (color !== lastColor) {
             edgeMaterial.color.setStyle(color);
             accentMaterial.color.setStyle(color);
@@ -4904,17 +4974,17 @@ function mountHUDControls() {
      * @param {number} [durationMs]
      */
     const runQuickPresetMorph = (controlState, durationMs = globalControlState.morphDurationMs) => {
-        if (!controlState || !Array.isArray(controlState.targets) || controlState.targets.length === 0) return;
+        if (!controlState || !Array.isArray(controlState.targets) || controlState.targets.length === 0) return Promise.resolve(false);
         const duration = Number.isFinite(durationMs) && durationMs >= 0 ? durationMs : globalControlState.morphDurationMs;
         resetPresetMorphIndicators(controlState.preset.id);
         controlState.baseline = snapshotCurrentParamMap();
         setModeMorphAmount(controlState, 0, { apply: false, force: true });
         activeModePresetId = controlState.preset.id;
         refreshModeControlActiveUI();
-        morphToPresetValues(controlState.targets, duration);
+        const morphPromise = morphToPresetValues(controlState.targets, duration);
         if (!(duration > 0)) {
             setModeMorphAmount(controlState, 1, { apply: false, force: true });
-            return;
+            return morphPromise;
         }
         const token = modeMorphToken;
         const startedAt = performance.now();
@@ -4930,6 +5000,17 @@ function mountHUDControls() {
             setModeMorphAmount(controlState, 1, { apply: false, force: true });
         };
         requestAnimationFrame(animateIndicator);
+        return morphPromise;
+    };
+
+    runQuickPresetMorphExternal = (presetId, durationMs = globalControlState.morphDurationMs) => {
+        const id = normalizeUserPresetSlotId(presetId) || presetId;
+        const controlState = modeControls.get(presetId) || modeControls.get(id) || userPresetControls.get(id);
+        if (!controlState) return Promise.resolve(false);
+        return runQuickPresetMorph(controlState, durationMs);
+    };
+    clearPresetMorphIndicatorsExternal = () => {
+        resetPresetMorphIndicators();
     };
 
     /**
@@ -6125,3 +6206,384 @@ window.addEventListener('visibilitychange', function () {
         deactivateAudioMIDISensors();
     }
 });
+
+// ── Hermes Agent Control Bridge (__agentAPI) ─────────────────────────────
+// Every method is safe to call before the page is ready or before audio
+// is activated — they return null / empty / false if a dependency is missing.
+(function () {
+    'use strict';
+    var A = {
+        _version: '1.2.2',
+        _ready: false,
+        _readyPromise: null
+    };
+
+    // ── Audio lifecycle ──────────────────────────────────────────────────────
+    A.audio = {
+        /** Resume AudioContext + connect Faust node. Returns true on success. */
+        activate: async function () {
+            if (typeof ensureAudioActivated !== 'function') return false;
+            try { await ensureAudioActivated(); return true; }
+            catch (e) { return false; }
+        },
+        /** True if audio has been activated and not suspended. */
+        isActive: function () { return !!(typeof audioActivated !== 'undefined' && audioActivated); },
+        /** Suspend AudioContext, disconnect MIDI, stop live input. */
+        deactivate: async function () {
+            if (typeof deactivateAudioMIDISensors !== 'function') return false;
+            try { await deactivateAudioMIDISensors(); return true; }
+            catch (e) { return false; }
+        }
+    };
+
+    // ── Param control ────────────────────────────────────────────────────────
+    A.params = {
+        /** Set a single Faust parameter. @param {string} path — full address like '/ambient_m7_3.0/air' */
+        set: function (path, value) {
+            if (typeof faustUIBridge === 'undefined' || !faustUIBridge) return false;
+            var entry = typeof normalizeAgentParamEntry === 'function' ? normalizeAgentParamEntry(path, value) : null;
+            if (!entry) return false;
+            try { faustUIBridge.setParamValue(entry.path, entry.value, true); return true; }
+            catch (e) { return false; }
+        },
+        /** Get current value of a parameter from the live value map. */
+        get: function (path) {
+            var control = typeof getDSPControl === 'function' ? getDSPControl(path) : null;
+            if (!control || typeof currentParamValueMap === 'undefined') return null;
+            var v = currentParamValueMap.get(control.address);
+            return v !== undefined ? v : control.init;
+        },
+        /** Return full schema for every parameter: { address, label, min, max, step, init, value }. */
+        getAll: function () {
+            if (typeof dspControls === 'undefined') return [];
+            var out = [];
+            for (var i = 0; i < dspControls.length; i++) {
+                var c = dspControls[i];
+                out.push({
+                    address: c.address,
+                    label: c.label || c.address.split('/').pop(),
+                    min: c.min, max: c.max, step: c.step, init: c.init,
+                    value: (typeof currentParamValueMap !== 'undefined' ? currentParamValueMap.get(c.address) : undefined) ?? c.init
+                });
+            }
+            return out;
+        },
+        /**
+         * Batch-set multiple parameters. Entries: [{path, value}, ...].
+         * Values are validated, clamped, and quantized before any are applied.
+         */
+        setBatch: function (entries) {
+            if (typeof faustUIBridge === 'undefined' || !faustUIBridge || !Array.isArray(entries)) return false;
+            var normalized = [];
+            for (var i = 0; i < entries.length; i++) {
+                var candidate = entries[i] || {};
+                var entry = typeof normalizeAgentParamEntry === 'function' ? normalizeAgentParamEntry(candidate.path, candidate.value) : null;
+                if (!entry) return false;
+                normalized.push(entry);
+            }
+            if (normalized.length === 0) return false;
+            try {
+                for (var j = 0; j < normalized.length; j++) {
+                    faustUIBridge.setParamValue(normalized[j].path, normalized[j].value, true);
+                }
+                return true;
+            } catch (e) {
+                return false;
+            }
+        },
+        /** Resolve parameter metadata from the control index by address or short name. */
+        info: function (path) {
+            var c = typeof getDSPControl === 'function' ? getDSPControl(path) : null;
+            if (!c) return null;
+            return {
+                address: c.address, label: c.label || c.address.split('/').pop(),
+                min: c.min, max: c.max, step: c.step, init: c.init,
+                value: (typeof currentParamValueMap !== 'undefined' ? currentParamValueMap.get(c.address) : undefined) ?? c.init
+            };
+        }
+    };
+
+    // ── HUD button controls (motion / MIDI / live input) ─────────────────────
+    function makeToggleControl(activator, deactivator, stateGetter) {
+        return {
+            isEnabled: function () { return !!stateGetter(); },
+            enable: async function () {
+                if (stateGetter()) return true;
+                try { await activator(); return !!stateGetter(); }
+                catch (e) { return false; }
+            },
+            disable: async function () {
+                if (!stateGetter()) return true;
+                try { await deactivator(); return !stateGetter(); }
+                catch (e) { return false; }
+            },
+            toggle: async function () {
+                if (stateGetter()) { await deactivator(); return false; }
+                else { await activator(); return !!stateGetter(); }
+            }
+        };
+    }
+    A.controls = {
+        motion: makeToggleControl(
+            function () {
+                if (typeof activateMotionMode === 'function') return activateMotionMode();
+                return Promise.resolve();
+            },
+            function () {
+                if (typeof deactivateMotionMode === 'function') deactivateMotionMode();
+                else if (typeof stopMotionModeLoop === 'function') stopMotionModeLoop();
+                return Promise.resolve();
+            },
+            function () { return typeof motionModeState !== 'undefined' && motionModeState.active; }
+        ),
+        midi: makeToggleControl(
+            function () { if (typeof startMIDI === 'function') return startMIDI(); return Promise.resolve(); },
+            function () { if (typeof stopMIDI === 'function') stopMIDI(); return Promise.resolve(); },
+            function () { return typeof midiInputState !== 'undefined' && midiInputState.active; }
+        ),
+        liveInput: makeToggleControl(
+            function () {
+                var btn = document.querySelector('.hud-control-btn-live-input');
+                if (btn) { btn.click(); return new Promise(function (r) { setTimeout(r, 200); }); }
+                return Promise.resolve();
+            },
+            function () { if (typeof stopLiveAudioInput === 'function') stopLiveAudioInput(); return Promise.resolve(); },
+            function () { return typeof liveInputState !== 'undefined' && liveInputState.active; }
+        )
+    };
+
+    // ── Sequencer ────────────────────────────────────────────────────────────
+    A.seq = {
+        isPlaying: function () { return !!(typeof sequencer !== 'undefined' && sequencer && sequencer.isPlaying()); },
+        play: function () {
+            if (typeof sequencer === 'undefined' || !sequencer) return false;
+            if (sequencer.getLinkedParameters().length === 0) return false;
+            var btn = document.querySelector('.hud-seq-btn[aria-label="Play sequencer"]');
+            if (btn) { btn.click(); return true; }
+            return false;
+        },
+        stop: function () {
+            if (typeof sequencer === 'undefined' || !sequencer) return false;
+            var btn = document.querySelector('.hud-seq-btn[aria-label="Stop sequencer"]');
+            if (btn) { btn.click(); return true; }
+            return false;
+        },
+        setBPM: function (bpm) {
+            if (typeof sequencer === 'undefined' || !sequencer) return false;
+            sequencer.setBPM(Number(bpm));
+            return true;
+        },
+        getBPM: function () { return (typeof sequencer !== 'undefined' && sequencer) ? sequencer.getBPM() : 120; },
+        setStepCount: function (count) {
+            if (typeof sequencer === 'undefined' || !sequencer) return false;
+            if ([8, 16, 32].indexOf(Number(count)) === -1) return false;
+            sequencer.setStepCount(Number(count));
+            return true;
+        },
+        setDirection: function (dir) {
+            if (typeof sequencer === 'undefined' || !sequencer) return false;
+            if (['forward', 'reverse', 'pingpong'].indexOf(dir) === -1) return false;
+            sequencer.setDirection(dir);
+            return true;
+        },
+        /** Link a parameter to the sequencer by address. */
+        link: function (path) {
+            if (typeof sequencer === 'undefined' || !sequencer) return false;
+            var ctrl = typeof getDSPControl === 'function' ? getDSPControl(path) : null;
+            if (!ctrl) return false;
+            sequencer.linkParameter(ctrl.address, ctrl.min, ctrl.max, ctrl.step);
+            return true;
+        },
+        unlink: function (path) {
+            if (typeof sequencer === 'undefined' || !sequencer) return false;
+            sequencer.unlinkParameter(path);
+            return true;
+        },
+        /** Set a single step value for a linked parameter (0–1 normalized). */
+        setStep: function (path, index, value) {
+            if (typeof sequencer === 'undefined' || !sequencer) return false;
+            sequencer.setStepValue(path, Number(index), Number(value));
+            return true;
+        },
+        /** Open the sequencer panel. */
+        open: function () {
+            var btn = document.querySelector('.hud-control-btn-seq');
+            if (btn && btn.dataset.active !== '1') { btn.click(); return true; }
+            return btn ? btn.dataset.active === '1' : false;
+        },
+        /** Close the sequencer panel. */
+        close: function () {
+            var btn = document.querySelector('.hud-control-btn-seq');
+            if (btn && btn.dataset.active === '1') { btn.click(); return true; }
+            return btn ? btn.dataset.active !== '1' : false;
+        },
+        /** Toggle sequencer panel open/closed. */
+        toggle: function () {
+            var btn = document.querySelector('.hud-control-btn-seq');
+            if (btn) { btn.click(); return true; }
+            return false;
+        },
+        /** Current sequencer state snapshot. */
+        getState: function () {
+            if (typeof sequencer === 'undefined' || !sequencer) return null;
+            return {
+                playing: sequencer.isPlaying(),
+                bpm: sequencer.getBPM(),
+                stepCount: sequencer.getStepCount(),
+                direction: sequencer.getDirection(),
+                currentStep: sequencer.getCurrentStep(),
+                linkedCount: sequencer.getLinkedParameters().length,
+                linkedParams: sequencer.getLinkedParameters()
+            };
+        }
+    };
+
+    // ── Presets ──────────────────────────────────────────────────────────────
+    A.preset = {
+        /** List every stock preset with its ID, title, and subtitle. */
+        list: function () {
+            if (typeof MODE_PRESETS === 'undefined') return [];
+            var out = [];
+            for (var i = 0; i < MODE_PRESETS.length; i++) {
+                var p = MODE_PRESETS[i];
+                out.push({ id: p.id, title: p.title, subtitle: p.subtitle });
+            }
+            return out;
+        },
+        /** Trigger a stock or saved user preset morph by preset ID. */
+        apply: async function (id, duration) {
+            if (typeof runQuickPresetMorphExternal !== 'function') return false;
+            try { return !!(await runQuickPresetMorphExternal(id, duration)); }
+            catch (e) { return false; }
+        },
+        /**
+         * Morph to arbitrary target values.
+         * @param {Object|Array} targets — { path: value, ... } or [{ path, value }, ...]
+         * @param {number} [duration] - morph duration in ms (default: global control state)
+         */
+        morphTo: async function (targets, duration) {
+            if (typeof morphToPresetValues !== 'function' || typeof buildAgentPresetEntries !== 'function') return false;
+            var entries = buildAgentPresetEntries(targets);
+            if (!entries.length) return false;
+            if (typeof clearPresetMorphIndicatorsExternal === 'function') clearPresetMorphIndicatorsExternal();
+            try {
+                return !!(await morphToPresetValues(entries, duration ?? (typeof globalControlState !== 'undefined' ? globalControlState.morphDurationMs : undefined)));
+            } catch (e) {
+                return false;
+            }
+        },
+        /** List user preset slots. */
+        listUser: function () {
+            if (typeof userPresetSlots === 'undefined') return [];
+            var out = [];
+            for (var i = 0; i < userPresetSlots.length; i++) {
+                var s = userPresetSlots[i];
+                var hasValues = !!(s && s.saved && s.values && Object.keys(s.values).length > 0);
+                out.push({
+                    id: s.id,
+                    label: s.label || (typeof getUserPresetShortLabel === 'function' ? getUserPresetShortLabel(s.id) : 'Slot ' + s.id),
+                    hasData: hasValues,
+                    count: hasValues ? Object.keys(s.values).length : 0,
+                    updatedAt: s.updatedAt || ''
+                });
+            }
+            return out;
+        },
+        /** Snapshot current preset-mode parameters into a user preset slot. */
+        save: function (slotId, label) {
+            if (typeof saveUserPresetSlot !== 'function' || typeof snapshotCurrentPresetValues !== 'function') return false;
+            var id = typeof normalizeUserPresetSlotId === 'function' ? normalizeUserPresetSlotId(slotId) : slotId;
+            if (!id) return false;
+            var slot = saveUserPresetSlot(id, snapshotCurrentPresetValues());
+            if (!slot) return false;
+            if (typeof label === 'string') {
+                slot.label = label;
+                if (typeof persistUserPresetSlots === 'function') persistUserPresetSlots(userPresetSlots);
+            }
+            if (typeof refreshUserPresetButtonsUIExternal === 'function') refreshUserPresetButtonsUIExternal();
+            return true;
+        },
+        /** Load a saved user preset and morph to its values. */
+        load: async function (slotId, duration) {
+            if (typeof getUserPresetSlot !== 'function' || typeof buildModePresetEntriesFromValues !== 'function' || typeof morphToPresetValues !== 'function') return false;
+            var id = typeof normalizeUserPresetSlotId === 'function' ? normalizeUserPresetSlotId(slotId) : slotId;
+            var slot = getUserPresetSlot(id);
+            if (!slot || !slot.saved || !slot.values || Object.keys(slot.values).length === 0) return false;
+            var entries = buildModePresetEntriesFromValues(slot.values);
+            if (!entries.length) return false;
+            if (typeof runQuickPresetMorphExternal === 'function') {
+                try { return !!(await runQuickPresetMorphExternal(id, duration)); }
+                catch (e) { return false; }
+            }
+            try {
+                return !!(await morphToPresetValues(entries, duration ?? (typeof globalControlState !== 'undefined' ? globalControlState.morphDurationMs : 600)));
+            } catch (e) {
+                return false;
+            }
+        },
+        /** Delete a user preset slot by ID while preserving the fixed slot list. */
+        del: function (slotId) {
+            if (typeof userPresetSlots === 'undefined' || typeof createEmptyUserPresetSlot !== 'function' || typeof persistUserPresetSlots !== 'function') return false;
+            var id = typeof normalizeUserPresetSlotId === 'function' ? normalizeUserPresetSlotId(slotId) : slotId;
+            for (var i = 0; i < userPresetSlots.length; i++) {
+                if (userPresetSlots[i].id === id) {
+                    userPresetSlots[i] = createEmptyUserPresetSlot(id);
+                    persistUserPresetSlots(userPresetSlots);
+                    if (typeof refreshUserPresetButtonsUIExternal === 'function') refreshUserPresetButtonsUIExternal();
+                    return true;
+                }
+            }
+            return false;
+        }
+    };
+
+    // ── MIDI injection ───────────────────────────────────────────────────────
+    A.midi = {
+        /** Send a raw MIDI message to the Faust AudioNode. */
+        send: function (status, data1, data2) {
+            if (typeof faustNode === 'undefined' || !faustNode || typeof faustNode.midiMessage !== 'function') return false;
+            try { faustNode.midiMessage(new Uint8Array([status, data1, data2])); return true; }
+            catch (e) { return false; }
+        },
+        isEnabled: function () { return !!(typeof midiInputState !== 'undefined' && midiInputState.active); }
+    };
+
+    // ── State snapshot ───────────────────────────────────────────────────────
+    A.state = {
+        /** Lightweight state — keys only, no param values. */
+        get: function () {
+            var audioActive = !!(typeof audioActivated !== 'undefined' && audioActivated);
+            return {
+                version: A._version,
+                audioActive: audioActive,
+                audioContextState: typeof audioContext !== 'undefined' ? audioContext.state : 'unknown',
+                faustReady: !!(typeof faustNode !== 'undefined' && faustNode),
+                paramCount: typeof dspControls !== 'undefined' ? dspControls.length : 0,
+                motionEnabled: !!(typeof motionModeState !== 'undefined' && motionModeState.active),
+                midiEnabled: !!(typeof midiInputState !== 'undefined' && midiInputState.active),
+                liveInputEnabled: !!(typeof liveInputState !== 'undefined' && liveInputState.active),
+                sequencerPlaying: !!(typeof sequencer !== 'undefined' && sequencer && sequencer.isPlaying()),
+                seqLinkedCount: (typeof sequencer !== 'undefined' && sequencer) ? sequencer.getLinkedParameters().length : 0,
+                stockPresets: typeof MODE_PRESETS !== 'undefined' ? MODE_PRESETS.length : 0
+            };
+        },
+        /** Full state — includes every parameter's current value. */
+        full: function () {
+            var s = A.state.get();
+            s.params = {};
+            if (typeof dspControls !== 'undefined') {
+                for (var i = 0; i < dspControls.length; i++) {
+                    var c = dspControls[i];
+                    s.params[c.address] = (typeof currentParamValueMap !== 'undefined' ? currentParamValueMap.get(c.address) : undefined) ?? c.init;
+                }
+            }
+            return s;
+        }
+    };
+
+    // ── Register ─────────────────────────────────────────────────────────────
+    window.__agentAPI = A;
+    if (typeof console !== 'undefined') {
+        console.log('[agentAPI] Hermes Control Bridge v' + A._version + ' ready. Call __agentAPI.state.get() for a snapshot.');
+    }
+})();
