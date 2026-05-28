@@ -18,7 +18,7 @@ A buildless static PWA that turns a Faust/WASM ambient DSP into a dense, tactile
 
 ## Features
 
-- **57-parameter Faust control grid** generated from the DSP UI descriptor — every knob wired directly to DSP parameters
+- **61-parameter Faust control grid** generated from the DSP UI descriptor — every knob wired directly to DSP parameters
 - **Preset system** — stock presets with quick-morph buttons, morph cards/knobs, and 8 local user slots persisted in `localStorage`
 - **Footer preset I/O console** — transfer-code export/load/clear/copy/paste with a CRT/terminal/`.nfo` aesthetic
 - **VIBE/theme switching** with persistence across sessions

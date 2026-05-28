@@ -70,7 +70,7 @@
 
 ## UI/Event Control Paths (Where Parameters Are Controlled)
 
-All 57 parameters use the same base write path when controlled from the knob surface:
+All 61 parameters use the same base write path when controlled from the knob surface:
 
 1. Knob UI gesture updates control value in Faust UI component (`faust-ui/index.js:1448`, `faust-ui/index.js:1486`, `faust-ui/index.js:1500`).
 2. Component emits param change (`faust-ui/index.js:565`).

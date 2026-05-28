@@ -15,7 +15,7 @@
 1. **Faust built-in sequencer**: `ba.automat` exists but is a record/replay primitive, not ideal for pre-programmed step sequencers.
 2. **Recommended approach**: JS-side sequencer driving Faust parameters via `setParamValue()`. This is fast (single memory write), glitch-free at 16th-note rates (~125ms), and allows the UI to control sequencer state directly.
 3. **Timing**: `setInterval` is adequate for 30-300 BPM. For tighter sync, `AudioParam` scheduling or `audioContext.currentTime` look-ahead scheduling can be used.
-4. **Per-parameter routing**: `dspControls` array provides all 57 parameter addresses with min/max/step/init. `faustUIBridge.setParamValue(path, value)` and `faustUIBridge.setParamValues(entries)` are the APIs.
+4. **Per-parameter routing**: `dspControls` array provided 57 parameter addresses in that snapshot (project now has 61 total). `faustUIBridge.setParamValue(path, value)` and `faustUIBridge.setParamValues(entries)` are the APIs.
 
 ---
 
