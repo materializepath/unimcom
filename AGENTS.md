@@ -260,7 +260,18 @@ Param changes are applied per-audio-block (real-time). MIDI messages pass throug
 
 ## One-Command Deploy Regression Check
 
-Run this in the page console (or via `browser_console(expression=...)`) immediately after deploy:
+Primary (repo-root) command:
+
+```bash
+./scripts/deploy-regression-check.sh
+```
+
+What it verifies automatically:
+- Local vs root vs `/test/` SHA-256 parity for `index.js`, `service-worker.js`, `index.html`, `AGENTS.md`
+- Runtime contract on root + `/test/`: API version floor, param/preset counts, CSP flags, invalid `seq.link()` rejection, canonical/OG URLs, and JS/page errors
+- Writes machine-readable report to `.last-deploy-regression-report.json`
+
+Manual fallback (page console or `browser_console(expression=...)`) if script execution is unavailable:
 
 ```js
 (async () => {

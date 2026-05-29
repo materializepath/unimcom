@@ -17,5 +17,10 @@ transfer-codes/
 # Private notes
 *do not put on github* docs frm notes/
 
+# Regression-check outputs
+.last-deploy-regression-report.json
+test-results/
+playwright-report/
+
 # macOS
 .DS_Store
