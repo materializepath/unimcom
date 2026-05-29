@@ -1,4 +1,7 @@
-# Faust DSP Control Surface and UI Controls
+# [ARCHIVE] Faust DSP Control Surface and UI Controls
+
+> Historical document — do **not** use as live contract.
+> Superseded by `docs/faust-parameter-catalog.md` (generated from current `dsp-meta.json`) and `docs/agent-control-system.md`.
 
 ## Scope
 

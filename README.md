@@ -53,7 +53,7 @@ dsp-meta.json           Faust DSP metadata / UI descriptor
 faust-ui/               Local Faust UI dependency (CSS + JS)
 faustwasm/              Local Faust runtime JS
 vendor/                 Vendored libraries (Three.js)
-docs/                   System architecture and UI control reference
+docs/                   Active docs map (`docs/README.md`), agent contract, and generated parameter catalog
 ```
 
 ## Design language

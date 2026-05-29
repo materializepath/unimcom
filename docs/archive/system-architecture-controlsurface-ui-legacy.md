@@ -1,4 +1,7 @@
-# System Architecture: Control Surface UI
+# [ARCHIVE] System Architecture: Control Surface UI
+
+> Historical architecture snapshot — do **not** use as live contract.
+> Superseded by `docs/agent-control-system.md` and `docs/faust-parameter-catalog.md`.
 
 ## 1. High-Level Overview
 
@@ -109,7 +112,7 @@ JS-side:
 
 DSP-side:
 - `dsp-meta.json` embedded Faust source includes explicit smoothing on selected controls (for example phaser and attune controls).
-- Existing control analysis doc also notes smoothing hooks (`docs/faust-controlsurface-ui-controls.md`).
+- Existing control analysis doc also notes smoothing hooks (`docs/archive/faust-controlsurface-ui-controls-legacy-ambient_m7_2.0.md`).
 
 ### Polyphony model
 Current runtime:
@@ -311,7 +314,7 @@ Global mutable state exists in module scope of `index.js`:
 - `faust-ui/index.css`: baseline Faust UI styles.
 - `service-worker.js`: PWA cache and fetch strategy with COOP/COEP header injection.
 - `manifest.json`: PWA manifest.
-- `docs/faust-controlsurface-ui-controls.md`: generated control/path inventory and call-path notes.
+- `docs/archive/faust-controlsurface-ui-controls-legacy-ambient_m7_2.0.md`: generated control/path inventory and call-path notes.
 - `backups/`: archived snapshots (not runtime).
 
 ### Responsibilities of major files

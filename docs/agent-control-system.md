@@ -3,7 +3,7 @@
 **DSP Version:** ambient_m7_3.0
 **API Version:** 1.2.2
 **Site:** https://unimcom.materialize.fun/
-**Last Updated:** 2026-05-28
+**Last Updated:** 2026-05-29
 
 ---
 
@@ -18,6 +18,14 @@ To enable full agent control, a **three-layer architecture** was implemented:
 | 1 — JS Bridge | Injected at end of `index.js` | Browser global `window.__agentAPI` | Programmatic API for every knob, button, sequencer, preset, MIDI |
 | 2 — AGENTS.md | `AGENTS.md` | `https://unimcom.materialize.fun/AGENTS.md` | Agent discovery — API reference, recipes, pitfalls |
 | 3 — Hermes Skill | `SKILL.md` | `~/.hermes/skills/autonomous-ai-agents/unimcom-agent/` | Reusable agent workflow with pre-baked recipe flows |
+
+---
+
+## Active vs Archived Documentation
+
+- Active docs map: `docs/README.md`
+- Current DSP parameter source of truth: `docs/faust-parameter-catalog.md` (generated from `dsp-meta.json`)
+- Archived historical docs: `docs/archive/` (legacy 57-control / `ambient_m7_2.0` references)
 
 ---
 
@@ -455,3 +463,4 @@ Expected pass values:
 | 2026-05-21 | 1.2.0 | Full motion/midi/liveInput toggle controls, stable release |
 | 2026-05-25 | 1.2.1 | Fixed agent preset morph/save/load/delete paths, motion disable, param validation, service-worker cache allowlist, and security headers |
 | 2026-05-28 | 1.2.2 | Fixed `seq.link()` validation: unknown parameter paths now return `false` and are not linked |
+| 2026-05-29 | 1.2.2 | Docs normalization: active docs map, generated `faust-parameter-catalog.md` from `dsp-meta.json`, and archived legacy `ambient_m7_2.0` / 57-control docs |
