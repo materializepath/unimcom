@@ -1869,6 +1869,14 @@ function isRootControl(control) {
 }
 
 /**
+ * @param {DSPControl | null | undefined} control
+ * @returns {boolean}
+ */
+function isGainControl(control) {
+    return !!control && controlKeyFromAddress(control.address) === GAIN_CONTROL_KEY;
+}
+
+/**
  * @param {number} semitones
  * @returns {number}
  */
@@ -5759,11 +5767,13 @@ function mountHUDControls() {
             globalControlState.saveModeArmed = false;
             activeModePresetId = "";
             resetPresetMorphIndicators();
-            const entries = dspControls.map((control) => ({
-                control,
-                path: control.address,
-                value: quantizeControlValue(control, randomizeControlValue(control)),
-            }));
+            const entries = dspControls
+                .filter((control) => !isGainControl(control))
+                .map((control) => ({
+                    control,
+                    path: control.address,
+                    value: quantizeControlValue(control, randomizeControlValue(control)),
+                }));
             const morphPromise = morphToRandomizedValuesStaggered(entries);
             const rollPromise = rollRandomButtonGlyph();
             await Promise.all([morphPromise, rollPromise]);
