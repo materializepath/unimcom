@@ -2398,16 +2398,22 @@
         }
 
         .hud-preset-toggle-icon {
-            width: clamp(20px, 2vw, 24px);
-            height: clamp(20px, 2vw, 24px);
-            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: clamp(20px, 2vw, 24px);
+            min-height: clamp(20px, 2vw, 24px);
+            font-size: clamp(16px, 1.35vw, 19px);
+            line-height: 1;
+            font-weight: 600;
+            color: var(--hud-preset-label, var(--hud-ink, rgba(232, 236, 240, 0.92)));
             transform: rotate(0deg);
             transform-origin: 50% 50%;
-            transition: transform 230ms ease;
+            transition: filter 180ms ease, color 180ms ease;
         }
 
         .hud-preset-toggle[data-expanded="1"] .hud-preset-toggle-icon {
-            transform: rotate(180deg);
+            transform: rotate(0deg);
         }
 
         .hud-preset-toggle-icon .bar {
@@ -2517,6 +2523,8 @@
 
         .hud-mode-btn:hover .hud-mode-name,
         .hud-mode-btn:focus-visible .hud-mode-name,
+        .hud-preset-toggle:hover .hud-preset-toggle-icon,
+        .hud-preset-toggle:focus-visible .hud-preset-toggle-icon,
         .hud-preset-toggle:hover .hud-preset-toggle-icon .bar,
         .hud-preset-toggle:hover .hud-preset-toggle-icon .triangle,
         .hud-preset-toggle:focus-visible .hud-preset-toggle-icon .bar,

@@ -3882,19 +3882,7 @@ function mountHUDControls() {
 
         const $icon = document.createElement("span");
         $icon.className = "hud-preset-toggle-icon";
-        const $bar1 = document.createElement("span");
-        $bar1.className = "bar bar-1";
-        const $bar2 = document.createElement("span");
-        $bar2.className = "bar bar-2";
-        const $bar3 = document.createElement("span");
-        $bar3.className = "bar bar-3";
-        const $triangleLeft = document.createElement("span");
-        $triangleLeft.className = "triangle triangle-left";
-        const $triangleRight = document.createElement("span");
-        $triangleRight.className = "triangle triangle-right";
-        const $triangleBase = document.createElement("span");
-        $triangleBase.className = "triangle triangle-base";
-        $icon.append($bar1, $bar2, $bar3, $triangleLeft, $triangleRight, $triangleBase);
+        $icon.textContent = "↻";
         $toggle.appendChild($icon);
         return $toggle;
     };
