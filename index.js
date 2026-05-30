@@ -4038,7 +4038,7 @@ function mountHUDControls() {
 
     const modeControls = new Map();
     let motionCubeController = null;
-    let stockQuickPresetsExpanded = false;
+    let stockQuickPresetsExpanded = true;
     let stockPresetKnobsExpanded = false;
     let userPresetKnobsExpanded = false;
     const reduceMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
