@@ -1,6 +1,6 @@
 // Set to > 0 if the DSP is polyphonic
 const FAUST_DSP_VOICES = 0;
-const CREATE_NODE_MODULE_SPEC = "./create-node.js?v=20260530perf1";
+const CREATE_NODE_MODULE_SPEC = "./create-node.js?v=20260530gainmax1";
 const THREE_MODULE_SPEC = "./vendor/three.module.min.js";
 const IS_LOCAL_PREVIEW = ["localhost", "127.0.0.1"].includes(window.location.hostname);
 
@@ -532,6 +532,28 @@ const HUD_THEMES = Object.freeze([
         "--hud-mode-knob-core-fill": "rgba(9, 17, 8, 0.88)",
         "--hud-pointer-glow": "rgba(121, 247, 149, 0.44)",
     }),
+    createHUDTheme("drk-rm", "DRK RM", {
+        "--hud-bg": "rgba(6, 3, 4, 0.92)",
+        "--hud-panel-bg": "rgba(11, 4, 6, 0.96)",
+        "--hud-border": "rgba(239, 91, 96, 0.28)",
+        "--hud-ink": "rgba(255, 232, 233, 0.93)",
+        "--hud-ink-soft": "rgba(234, 179, 182, 0.72)",
+        "--hud-off": "rgba(188, 66, 74, 0.2)",
+        "--hud-on": "rgba(255, 226, 228, 0.95)",
+        "--hud-accent": "rgba(255, 108, 112, 0.95)",
+        "--hud-accent-soft": "rgba(154, 32, 40, 0.34)",
+        "--hud-border-active": "rgba(255, 70, 78, 1)",
+        "--hud-grid": "rgba(232, 106, 114, 0.17)",
+        "--hud-font-family": "\"Space Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+        "--hud-body-bg": "#040102",
+        "--hud-shell-bg-base": "#020001",
+        "--hud-panel-frame-bg": "linear-gradient(180deg, rgba(30, 8, 11, 0.84) 0%, rgba(10, 2, 4, 0.82) 100%)",
+        "--hud-strip-bg": "rgba(28, 8, 11, 0.34)",
+        "--hud-strip-border": "rgba(210, 82, 90, 0.33)",
+        "--hud-mode-knob-fill": "rgba(16, 4, 6, 0.93)",
+        "--hud-mode-knob-core-fill": "rgba(10, 2, 4, 0.9)",
+        "--hud-pointer-glow": "rgba(255, 70, 78, 0.5)",
+    }),
 ]);
 
 const HUD_THEME_INDEX = new Map(HUD_THEMES.map((theme) => [theme.id, theme]));
@@ -765,7 +787,7 @@ const DSP_CONTROL_DEFAULTS = Object.freeze({
     chantMotion: 0.24,
     chantReciteMix: 0.55,
     detune: 0.0025,
-    gain: -12,
+    gain: -3,
     invisibleAmt: 0,
     lockCtl: 0,
     materialAmt: 0,
@@ -1766,12 +1788,15 @@ function collectDSPControls(items, out = []) {
         if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) return;
         const init = Number(item.init);
         const step = Number(item.step);
+        const key = controlKeyFromAddress(item.address);
+        const normalizedInit = Number.isFinite(init) ? init : min;
+        const preferredInit = key === GAIN_CONTROL_KEY ? max : normalizedInit;
         out.push({
             address: item.address,
             type: String(item.type || "hslider"),
             min,
             max,
-            init: Number.isFinite(init) ? init : min,
+            init: preferredInit,
             step: Number.isFinite(step) && step > 0 ? step : NaN,
         });
     });
@@ -5313,7 +5338,7 @@ function mountHUDControls() {
         min: gainControl?.min ?? -36,
         max: gainControl?.max ?? -3,
         step: gainControl?.step ?? 0.1,
-        value: gainControl ? getCurrentControlValue(gainControl) : -12,
+        value: gainControl ? getCurrentControlValue(gainControl) : -3,
         formatValue: (value) => `${value.toFixed(gainValueDecimals)}DB`,
         onChange: (value) => {
             if (!gainControl) return;
@@ -5367,7 +5392,7 @@ function mountHUDControls() {
 
     $globalList.append(motionIntensitySlider.root, gainKnob.root, rootKnob.root, transposeKnob.root, timeKnob.root);
     motionIntensitySlider.setValue(globalControlState.motionIntensity, { emit: false, force: true });
-    gainKnob.setValue(gainControl ? getCurrentControlValue(gainControl) : -12, { emit: false, force: true });
+    gainKnob.setValue(gainControl ? getCurrentControlValue(gainControl) : -3, { emit: false, force: true });
     rootKnob.setValue(globalControlState.effectiveRootHz, { emit: false, force: true });
     transposeKnob.setValue(globalControlState.transposeSemitones, { emit: false, force: true });
     timeKnob.setValue(globalControlState.morphDurationMs, { emit: false, force: true });
@@ -5970,6 +5995,13 @@ function mountHUDControls() {
     faustUIBridge = await createFaustUI($divFaustUI, faustNode);
     attachParamValueObserver();
     mountHUDControls();
+    const initialGainControl = getGainDSPControl();
+    if (initialGainControl) {
+        applyParamValues([{
+            path: initialGainControl.address,
+            value: quantizeControlValue(initialGainControl, initialGainControl.max),
+        }]);
+    }
     faustReadyResolve?.();
 
 })().catch((error) => {
