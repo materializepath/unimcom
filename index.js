@@ -1,6 +1,6 @@
 // Set to > 0 if the DSP is polyphonic
 const FAUST_DSP_VOICES = 0;
-const CREATE_NODE_MODULE_SPEC = "./create-node.js?v=20260521seq4";
+const CREATE_NODE_MODULE_SPEC = "./create-node.js?v=20260530perf1";
 const THREE_MODULE_SPEC = "./vendor/three.module.min.js";
 const IS_LOCAL_PREVIEW = ["localhost", "127.0.0.1"].includes(window.location.hostname);
 
@@ -69,6 +69,7 @@ let clearPresetMorphIndicatorsExternal = () => {};
 let destroyMotionCubeGlyph = () => {};
 let motionCubeModulePromise = null;
 let zoomResizeHandler = null;
+let zoomResizeFrame = 0;
 let fullscreenChangeHandler = null;
 let saveModeKeydownHandler = null;
 let activeModePresetId = "";
@@ -5411,23 +5412,49 @@ function mountHUDControls() {
     $panel.appendChild($modeButtonStrip);
     $panel.appendChild($modeKnobCollapse);
     $divFaustUI.appendChild($panel);
-    createMotionCubeGlyph($motionMode, $motionModeGlyph)
-        .then((controller) => {
-            if (!$motionMode.isConnected || !$motionModeGlyph.isConnected) {
-                controller.dispose();
-                return;
+    const mountMotionCubeGlyph = () => {
+        createMotionCubeGlyph($motionMode, $motionModeGlyph)
+            .then((controller) => {
+                if (!$motionMode.isConnected || !$motionModeGlyph.isConnected) {
+                    controller.dispose();
+                    return;
+                }
+                motionCubeController = controller;
+                motionCubeController.refresh();
+            })
+            .catch((error) => {
+                console.warn("Unable to mount the motion cube glyph:", error);
+            });
+    };
+
+    let cancelScheduledMotionCubeMount = () => {};
+    if (typeof window.requestIdleCallback === "function") {
+        const idleId = window.requestIdleCallback(() => {
+            cancelScheduledMotionCubeMount = () => {};
+            mountMotionCubeGlyph();
+        }, { timeout: 700 });
+        cancelScheduledMotionCubeMount = () => {
+            if (typeof window.cancelIdleCallback === "function") {
+                window.cancelIdleCallback(idleId);
             }
-            motionCubeController = controller;
-            destroyMotionCubeGlyph = () => {
-                if (!motionCubeController) return;
-                motionCubeController.dispose();
-                motionCubeController = null;
-            };
-            motionCubeController.refresh();
-        })
-        .catch((error) => {
-            console.warn("Unable to mount the motion cube glyph:", error);
-        });
+        };
+    } else {
+        const timeoutId = window.setTimeout(() => {
+            cancelScheduledMotionCubeMount = () => {};
+            mountMotionCubeGlyph();
+        }, 120);
+        cancelScheduledMotionCubeMount = () => {
+            window.clearTimeout(timeoutId);
+        };
+    }
+
+    destroyMotionCubeGlyph = () => {
+        cancelScheduledMotionCubeMount();
+        cancelScheduledMotionCubeMount = () => {};
+        if (!motionCubeController) return;
+        motionCubeController.dispose();
+        motionCubeController = null;
+    };
     syncPresetSpacerWidths();
     bindLinkedHorizontalScroll($modeButtonStrip, $modeStrip);
 
@@ -5884,14 +5911,23 @@ function mountHUDControls() {
     if (zoomResizeHandler) {
         window.removeEventListener("resize", zoomResizeHandler);
     }
+    if (zoomResizeFrame) {
+        cancelAnimationFrame(zoomResizeFrame);
+        zoomResizeFrame = 0;
+    }
     zoomResizeHandler = () => {
-        refreshZoomControlUI();
-        refreshScrollControlUI();
-        refreshFullscreenControlUI();
-        refreshPresetLaneMeasurements();
-        syncPresetSpacerWidths();
+        if (zoomResizeFrame) return;
+        zoomResizeFrame = requestAnimationFrame(() => {
+            zoomResizeFrame = 0;
+            refreshZoomControlUI();
+            refreshScrollControlUI();
+            refreshFullscreenControlUI();
+            refreshPresetLaneMeasurements();
+            syncPresetSpacerWidths();
+        });
     };
-    window.addEventListener("resize", zoomResizeHandler);
+    window.addEventListener("resize", zoomResizeHandler, { passive: true });
+    zoomResizeHandler();
 
     const $gridScroller = getGridScroller();
     if ($gridScroller) {

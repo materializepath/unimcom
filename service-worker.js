@@ -5,9 +5,11 @@ const FAUST_DSP_VOICES = 0;
 // Set to true if the DSP has an effect
 const FAUST_DSP_HAS_EFFECT = false;
 
-const CACHE_NAME = "ambient_m7_3.0_webapp_20260528agent2";
-const INDEX_ASSET_VERSION = "20260528agent2";
-const CREATE_NODE_MODULE_VERSION = "20260521seq4";
+const CACHE_NAME = "ambient_m7_3.0_webapp_20260530perf1";
+const INDEX_ASSET_VERSION = "20260530perf1";
+const CREATE_NODE_MODULE_VERSION = "20260530perf1";
+const FAUST_UI_MODULE_VERSION = "20260521seq4";
+const FAUST_UI_STYLES_VERSION = "20260303r25";
 
 /**
  * List of essential resources required for the **Mono DSP** version of the application.
@@ -18,18 +20,19 @@ const CREATE_NODE_MODULE_VERSION = "20260521seq4";
  */
 const MONO_RESOURCES = [
     "./index.html",
-    "./index.js",
     `./index.js?v=${INDEX_ASSET_VERSION}`,
-    "./create-node.js",
     `./create-node.js?v=${CREATE_NODE_MODULE_VERSION}`,
-    "./faust-ui/index.js?v=20260314r35",
-    "./faust-ui/index.css?v=20260303r25",
-    "./faust-ui/index.js",
-    "./faust-ui/index.css",
+    `./faust-ui/index.js?v=${FAUST_UI_MODULE_VERSION}`,
+    `./faust-ui/index.css?v=${FAUST_UI_STYLES_VERSION}`,
     "./faustwasm/index.js",
-    "./vendor/three.module.min.js",
     "./dsp-module.wasm",
     "./dsp-meta.json"
+];
+
+// Resources that are useful but not required for first render/audio boot.
+// Keep these runtime-cacheable but do not prefetch them during SW install.
+const OPTIONAL_LAZY_RESOURCES = [
+    "./vendor/three.module.min.js",
 ];
 
 /**
@@ -65,6 +68,28 @@ const getConfiguredResources = () => (
 );
 
 /**
+ * Build the install-time precache list:
+ * - omit optional lazy assets
+ * - dedupe exact request URLs
+ *
+ * @returns {string[]}
+ */
+function getPrecacheResources() {
+    const optionalURLs = new Set(
+        OPTIONAL_LAZY_RESOURCES.map((resource) => new URL(resource, serviceWorkerGlobalScope.registration.scope).href)
+    );
+    const deduped = [];
+    const seen = new Set();
+    for (const resource of getConfiguredResources()) {
+        const absolute = new URL(resource, serviceWorkerGlobalScope.registration.scope).href;
+        if (optionalURLs.has(absolute) || seen.has(absolute)) continue;
+        seen.add(absolute);
+        deduped.push(resource);
+    }
+    return deduped;
+}
+
+/**
  * Normalize request paths relative to this service worker's scope. This keeps
  * the cache policy correct whether the app is deployed at `/` or a test path.
  *
@@ -91,7 +116,9 @@ function getResourcePath(resource) {
     return getScopedPath(url);
 }
 
-const CACHEABLE_RESOURCE_PATHS = new Set(getConfiguredResources().map(getResourcePath));
+const CACHEABLE_RESOURCE_PATHS = new Set(
+    [...getConfiguredResources(), ...OPTIONAL_LAZY_RESOURCES].map(getResourcePath)
+);
 CACHEABLE_RESOURCE_PATHS.add("/service-worker.js");
 
 const NETWORK_FIRST_PATHS = new Set([
@@ -129,8 +156,9 @@ serviceWorkerGlobalScope.addEventListener("install", (event) => {
     console.log("Service worker installed");
     event.waitUntil((async () => {
         const cache = await caches.open(CACHE_NAME);
+        const precacheResources = getPrecacheResources();
         try {
-            await cache.addAll(getConfiguredResources());
+            await cache.addAll(precacheResources);
             await serviceWorkerGlobalScope.skipWaiting();
         } catch (error) {
             console.error("Failed to cache resources during install:", error);

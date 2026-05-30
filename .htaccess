@@ -10,3 +10,11 @@
 <IfModule mod_mime.c>
   AddType application/wasm .wasm
 </IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE application/json application/wasm application/javascript text/javascript text/css text/html image/svg+xml
+</IfModule>
+
+<IfModule mod_brotli.c>
+  AddOutputFilterByType BROTLI_COMPRESS application/json application/wasm application/javascript text/javascript text/css text/html image/svg+xml
+</IfModule>
