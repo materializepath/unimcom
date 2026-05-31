@@ -2090,6 +2090,23 @@
             margin-top: 1px;
         }
 
+        /* SELECT text pulsation when save mode is armed */
+        @keyframes save-select-pulse {
+            0%, 100% {
+                color: var(--hud-accent, var(--hud-border-active, rgba(71, 229, 186, 1)));
+                filter: brightness(1) saturate(1);
+            }
+            50% {
+                color: var(--hud-on, var(--hud-preset-active-border, rgba(71, 229, 186, 1)));
+                filter: brightness(1.25) saturate(1.18);
+            }
+        }
+
+        .hud-preset-group-toggle-save[data-save-armed="1"] .hud-mode-meta {
+            animation: save-select-pulse 1.4s ease-in-out infinite;
+            opacity: 1;
+        }
+
         /* SAVE zone hover → accent */
         .hud-preset-group-toggle .hud-preset-group-toggle-save:hover {
             color: var(--hud-preset-active-border, var(--hud-border-active, rgba(71, 229, 186, 1)));
