@@ -45,7 +45,7 @@
             --hud-panel-top-padding: clamp(6px, 0.6vw, 12px);
             --hud-pulse-purple: #c46bff;
             --hud-control-row-height: clamp(36px, 2.4vw, 42px);
-            --hud-mode-button-row-height: clamp(38px, 2.8vw, 44px);
+            --hud-mode-button-row-height: var(--hud-control-row-height);
             --hud-mode-knob-row-height: clamp(56px, 4.6vw, 64px);
             --hud-panel-reserve-collapsed: calc(
                 var(--hud-control-row-height) +
@@ -1957,7 +1957,8 @@
             min-width: clamp(52px, 4vw, 64px);
             padding: 0 clamp(8px, 0.6vw, 10px);
             color: var(--hud-ink-soft, rgba(208, 212, 216, 0.66));
-            font-size: clamp(9px, 0.68vw, 10px);
+            font-size: clamp(8px, 0.64vw, 9.5px);
+            line-height: 1;
             font-weight: 700;
             letter-spacing: 0.16em;
             text-transform: uppercase;
@@ -2401,9 +2402,9 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-width: clamp(20px, 2vw, 24px);
-            min-height: clamp(20px, 2vw, 24px);
-            font-size: clamp(16px, 1.35vw, 19px);
+            min-width: clamp(18px, 1.85vw, 22px);
+            min-height: clamp(18px, 1.85vw, 22px);
+            font-size: clamp(15px, 1.18vw, 17px);
             line-height: 1;
             font-weight: 600;
             color: var(--hud-preset-label, var(--hud-ink, rgba(232, 236, 240, 0.92)));
@@ -2533,9 +2534,9 @@
         }
 
         .hud-mode-btn .hud-mode-meta {
-            font-size: clamp(8px, 0.58vw, 9px);
-            line-height: 1;
-            letter-spacing: 0.12em;
+            font-size: clamp(7.5px, 0.54vw, 8.5px);
+            line-height: 0.9;
+            letter-spacing: 0.11em;
             color: var(--hud-preset-meta, var(--hud-ink-soft, rgba(208, 212, 216, 0.66)));
         }
 
@@ -2766,7 +2767,7 @@
             :root {
                 --hud-panel-gap: 6px;
                 --hud-control-row-height: 38px;
-                --hud-mode-button-row-height: 40px;
+                --hud-mode-button-row-height: var(--hud-control-row-height);
                 --hud-mode-knob-row-height: 58px;
                 --hud-panel-reserve-collapsed: calc(
                     var(--hud-control-row-height) +
