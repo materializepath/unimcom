@@ -1188,7 +1188,7 @@ const MODE_PRESETS = Object.freeze([
         phaserDepth: 0.64,
         phaserFeedback: 0.29,
         phaserMix: 0.26,
-        gain: -13,
+        gain: -9,
     }),
     createModePreset("night_sky_wonder", "ST.097", "AWID.CATH.88", {
         root: 82,
@@ -1247,7 +1247,7 @@ const MODE_PRESETS = Object.freeze([
         phaserDepth: 0.27,
         phaserFeedback: -0.24,
         phaserMix: 0.08,
-        gain: -17.5,
+        gain: -9,
     }),
     createModePreset("ancient_forest_curiosity", "BC.081", "MATR.BRAT.71", {
         root: 74,
@@ -1306,7 +1306,7 @@ const MODE_PRESETS = Object.freeze([
         phaserDepth: 0.72,
         phaserFeedback: 0.43,
         phaserMix: 0.34,
-        gain: -10.8,
+        gain: -9,
     }),
     createModePreset("water_memory", "AW.086", "ADEP.PHSD.80", {
         root: 146.8,
@@ -1365,7 +1365,7 @@ const MODE_PRESETS = Object.freeze([
         phaserDepth: 0.74,
         phaserFeedback: -0.58,
         phaserMix: 0.36,
-        gain: -15.8,
+        gain: -9,
     }),
     createModePreset("crystal_cave", "PC.100", "AWID.BCNT.94", {
         root: 175,
@@ -1424,7 +1424,7 @@ const MODE_PRESETS = Object.freeze([
         phaserDepth: 0.85,
         phaserFeedback: 0.52,
         phaserMix: 0.4,
-        gain: -18.5,
+        gain: -9,
     }),
     createModePreset("childhood_memory", "CM.062", "STON.AELE.58", {
         root: 206,
@@ -1483,7 +1483,7 @@ const MODE_PRESETS = Object.freeze([
         phaserDepth: 0.17,
         phaserFeedback: -0.12,
         phaserMix: 0.04,
-        gain: -9.8,
+        gain: -9,
     }),
     createModePreset("heroic_gentle_adventure", "PX.088", "PDRV.PMOT.82", {
         root: 123.47,
@@ -1542,7 +1542,7 @@ const MODE_PRESETS = Object.freeze([
         phaserDepth: 0.71,
         phaserFeedback: 0.44,
         phaserMix: 0.22,
-        gain: -13.5,
+        gain: -9,
     }),
 ]);
 
