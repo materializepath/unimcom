@@ -4068,6 +4068,7 @@ function mountHUDControls() {
     let stockPresetKnobsExpanded = false;
     let userQuickPresetsExpanded = true;
     let userPresetKnobsExpanded = false;
+    let saveSelectInterval = null;
     const reduceMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const fineHoverQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
 
@@ -4895,7 +4896,22 @@ function mountHUDControls() {
         $savePreset.dataset.saveArmed = armed ? "1" : "0";
         $savePreset.title = armed ? "Cancel save mode" : "Arm save mode";
         $savePreset.setAttribute("aria-label", armed ? "Cancel save mode" : "Arm save mode");
-        $savePresetMeta.textContent = armed ? "SELECT" : "READY";
+
+        if (saveSelectInterval) {
+            clearInterval(saveSelectInterval);
+            saveSelectInterval = null;
+        }
+
+        if (armed) {
+            $savePresetMeta.textContent = "SELECT";
+            let tick = true;
+            saveSelectInterval = setInterval(() => {
+                $savePresetMeta.textContent = (tick = !tick) ? "SELECT" : "SLOT";
+            }, 700);
+        } else {
+            $savePresetMeta.textContent = "READY";
+        }
+
         userPresetControls.forEach((controlState) => {
             controlState.button.dataset.saveArmed = armed ? "1" : "0";
         });
