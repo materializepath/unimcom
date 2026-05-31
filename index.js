@@ -1,6 +1,6 @@
 // Set to > 0 if the DSP is polyphonic
 const FAUST_DSP_VOICES = 0;
-const CREATE_NODE_MODULE_SPEC = "./create-node.js?v=20260530gainmax1";
+const CREATE_NODE_MODULE_SPEC = "./create-node.js?v=20260530mondri1";
 const THREE_MODULE_SPEC = "./vendor/three.module.min.js";
 const IS_LOCAL_PREVIEW = ["localhost", "127.0.0.1"].includes(window.location.hostname);
 
@@ -555,26 +555,26 @@ const HUD_THEMES = Object.freeze([
         "--hud-pointer-glow": "rgba(255, 70, 78, 0.5)",
     }),
     createHUDTheme("mondri", "Mondri", {
-        "--hud-bg": "rgba(248, 244, 236, 0.94)",
-        "--hud-panel-bg": "rgba(252, 249, 242, 0.97)",
-        "--hud-border": "rgba(0, 0, 0, 0.42)",
-        "--hud-ink": "rgba(20, 18, 16, 0.96)",
-        "--hud-ink-soft": "rgba(85, 80, 74, 0.78)",
-        "--hud-off": "rgba(180, 175, 165, 0.22)",
+        "--hud-bg": "rgba(252, 250, 244, 0.95)",
+        "--hud-panel-bg": "rgba(255, 253, 249, 0.98)",
+        "--hud-border": "rgba(0, 0, 0, 0.48)",
+        "--hud-ink": "rgba(18, 16, 14, 0.96)",
+        "--hud-ink-soft": "rgba(72, 68, 62, 0.78)",
+        "--hud-off": "rgba(200, 196, 188, 0.26)",
         "--hud-on": "rgba(212, 42, 42, 1)",
-        "--hud-accent": "rgba(212, 42, 42, 0.95)",
-        "--hud-accent-soft": "rgba(30, 91, 168, 0.28)",
-        "--hud-border-active": "rgba(0, 0, 0, 0.92)",
-        "--hud-grid": "rgba(0, 0, 0, 0.08)",
+        "--hud-accent": "rgba(212, 42, 42, 0.96)",
+        "--hud-accent-soft": "rgba(30, 91, 168, 0.24)",
+        "--hud-border-active": "rgba(0, 0, 0, 0.94)",
+        "--hud-grid": "rgba(0, 0, 0, 0.09)",
         "--hud-font-family": "\"Space Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
-        "--hud-body-bg": "#0D0B08",
-        "--hud-shell-bg-base": "#0A0806",
-        "--hud-panel-frame-bg": "linear-gradient(180deg, rgba(248, 244, 236, 0.88) 0%, rgba(240, 235, 225, 0.84) 100%)",
-        "--hud-strip-bg": "rgba(255, 252, 247, 0.38)",
-        "--hud-strip-border": "rgba(0, 0, 0, 0.5)",
-        "--hud-mode-knob-fill": "rgba(252, 249, 242, 0.94)",
-        "--hud-mode-knob-core-fill": "rgba(245, 240, 232, 0.9)",
-        "--hud-pointer-glow": "rgba(212, 42, 42, 0.52)",
+        "--hud-body-bg": "#F0ECE0",
+        "--hud-shell-bg-base": "#EBE6D8",
+        "--hud-panel-frame-bg": "linear-gradient(180deg, rgba(255, 253, 249, 0.92) 0%, rgba(248, 244, 236, 0.88) 100%)",
+        "--hud-strip-bg": "rgba(255, 253, 249, 0.6)",
+        "--hud-strip-border": "rgba(0, 0, 0, 0.52)",
+        "--hud-mode-knob-fill": "rgba(252, 250, 244, 0.96)",
+        "--hud-mode-knob-core-fill": "rgba(248, 244, 236, 0.92)",
+        "--hud-pointer-glow": "rgba(212, 42, 42, 0.5)",
     }),
 ]);
 

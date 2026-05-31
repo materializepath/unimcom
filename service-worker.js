@@ -5,9 +5,9 @@ const FAUST_DSP_VOICES = 0;
 // Set to true if the DSP has an effect
 const FAUST_DSP_HAS_EFFECT = false;
 
-const CACHE_NAME = "ambient_m7_3.0_webapp_20260530gainmax1";
-const INDEX_ASSET_VERSION = "20260530gainmax1";
-const CREATE_NODE_MODULE_VERSION = "20260530gainmax1";
+const CACHE_NAME = "ambient_m7_3.0_webapp_20260530mondri1";
+const INDEX_ASSET_VERSION = "20260530mondri1";
+const CREATE_NODE_MODULE_VERSION = "20260530mondri1";
 const FAUST_UI_MODULE_VERSION = "20260521seq4";
 const FAUST_UI_STYLES_VERSION = "20260303r25";
 
