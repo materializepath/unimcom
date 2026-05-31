@@ -1,6 +1,6 @@
 // Set to > 0 if the DSP is polyphonic
 const FAUST_DSP_VOICES = 0;
-const CREATE_NODE_MODULE_SPEC = "./create-node.js?v=20260530mondri1";
+const CREATE_NODE_MODULE_SPEC = "./create-node.js?v=20260530mondri2";
 const THREE_MODULE_SPEC = "./vendor/three.module.min.js";
 const IS_LOCAL_PREVIEW = ["localhost", "127.0.0.1"].includes(window.location.hostname);
 
@@ -557,21 +557,21 @@ const HUD_THEMES = Object.freeze([
     createHUDTheme("mondri", "Mondri", {
         "--hud-bg": "rgba(252, 250, 244, 0.95)",
         "--hud-panel-bg": "rgba(255, 253, 249, 0.98)",
-        "--hud-border": "rgba(0, 0, 0, 0.48)",
+        "--hud-border": "rgba(0, 0, 0, 0.52)",
         "--hud-ink": "rgba(18, 16, 14, 0.96)",
-        "--hud-ink-soft": "rgba(72, 68, 62, 0.78)",
-        "--hud-off": "rgba(200, 196, 188, 0.26)",
+        "--hud-ink-soft": "rgba(52, 48, 42, 0.88)",
+        "--hud-off": "rgba(140, 136, 128, 0.32)",
         "--hud-on": "rgba(212, 42, 42, 1)",
         "--hud-accent": "rgba(212, 42, 42, 0.96)",
-        "--hud-accent-soft": "rgba(30, 91, 168, 0.24)",
+        "--hud-accent-soft": "rgba(30, 91, 168, 0.32)",
         "--hud-border-active": "rgba(0, 0, 0, 0.94)",
-        "--hud-grid": "rgba(0, 0, 0, 0.09)",
+        "--hud-grid": "rgba(0, 0, 0, 0.14)",
         "--hud-font-family": "\"Space Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
         "--hud-body-bg": "#F0ECE0",
         "--hud-shell-bg-base": "#EBE6D8",
-        "--hud-panel-frame-bg": "linear-gradient(180deg, rgba(255, 253, 249, 0.92) 0%, rgba(248, 244, 236, 0.88) 100%)",
-        "--hud-strip-bg": "rgba(255, 253, 249, 0.6)",
-        "--hud-strip-border": "rgba(0, 0, 0, 0.52)",
+        "--hud-panel-frame-bg": "linear-gradient(180deg, rgba(252, 250, 244, 0.96) 0%, rgba(240, 236, 226, 0.92) 100%)",
+        "--hud-strip-bg": "rgba(252, 250, 244, 0.72)",
+        "--hud-strip-border": "rgba(0, 0, 0, 0.56)",
         "--hud-mode-knob-fill": "rgba(252, 250, 244, 0.96)",
         "--hud-mode-knob-core-fill": "rgba(248, 244, 236, 0.92)",
         "--hud-pointer-glow": "rgba(212, 42, 42, 0.5)",
