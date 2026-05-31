@@ -9,6 +9,12 @@
 - `plans/`
   - Implementation plans and historical execution notes.
 
+## Plans
+
+- `plans/2026-05-30-state-checkpoint.md` — **current state** (HEAD `871ff6b`, shipped work, next-up priorities)
+- `plans/2026-05-30-performance-optimization-plan.md` — perf audit + shipped optimizations
+- `plans/2026-05-29-next-up-checkpoint.md` — superseded, retained for history
+
 ## Archive (historical, do not treat as live contract)
 
 - `archive/faust-controlsurface-ui-controls-legacy-ambient_m7_2.0.md`
@@ -20,4 +26,11 @@
 
 ```bash
 node scripts/generate-faust-parameter-catalog.cjs
+```
+
+## Create backup
+
+```bash
+git archive --format=tar.gz --prefix="unimcom-$(git rev-parse --short HEAD)/" \
+  -o "backups/unimcom-$(git rev-parse --short HEAD)-$(date +%Y%m%d).tar.gz" HEAD
 ```
