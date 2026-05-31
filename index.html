@@ -2014,6 +2014,39 @@
             filter: brightness(1.06) saturate(1.08);
         }
 
+        /* --- Per-zone hover states (label + ↻) --- */
+
+        /* Label zone: hover → accent color */
+        .hud-preset-group-toggle .hud-preset-group-toggle-label:hover {
+            color: var(--hud-preset-active-border, var(--hud-border-active, rgba(71, 229, 186, 1)));
+            filter: brightness(1.12) saturate(1.12);
+        }
+
+        /* Label zone: expanded state → accent */
+        .hud-preset-group-toggle[data-expanded="1"] .hud-preset-group-toggle-label {
+            color: var(--hud-preset-active-border, var(--hud-border-active, rgba(71, 229, 186, 1)));
+        }
+
+        /* Label zone: expanded + hover → brighter */
+        .hud-preset-group-toggle[data-expanded="1"] .hud-preset-group-toggle-label:hover {
+            color: var(--hud-preset-active-border, var(--hud-border-active, rgba(71, 229, 186, 1)));
+            filter: brightness(1.18) saturate(1.14);
+        }
+
+        /* Knob ↻ zone: hover → accent color */
+        .hud-preset-group-toggle .hud-preset-group-toggle-knob:hover {
+            color: var(--hud-preset-active-border, var(--hud-border-active, rgba(71, 229, 186, 1)));
+            border-left-color: color-mix(in srgb, var(--hud-preset-active-border, var(--hud-border-active, rgba(71, 229, 186, 1))) 46%, rgba(255, 255, 255, 0.08));
+            filter: brightness(1.12) saturate(1.12);
+        }
+
+        /* Knob ↻ zone: expanded + hover → brighter */
+        .hud-preset-group-toggle[data-knob-expanded="1"] .hud-preset-group-toggle-knob:hover {
+            color: var(--hud-preset-active-border, var(--hud-border-active, rgba(71, 229, 186, 1)));
+            border-left-color: color-mix(in srgb, var(--hud-preset-active-border, var(--hud-border-active, rgba(71, 229, 186, 1))) 46%, rgba(255, 255, 255, 0.08));
+            filter: brightness(1.18) saturate(1.14);
+        }
+
         .hud-preset-group-toggle:focus-visible {
             outline: 1px solid color-mix(in srgb, var(--hud-preset-active-border, var(--hud-border-active, rgba(71, 229, 186, 1))) 74%, transparent);
             outline-offset: -1px;
@@ -2058,6 +2091,27 @@
         .hud-preset-stock-lane[data-expanded="1"] .hud-preset-stock-lane-track {
             transform: translate3d(0, 0, 0);
             opacity: 1;
+        }
+
+        .hud-preset-user-lane {
+            --hud-user-lane-current-width: 0px;
+            flex: 0 0 var(--hud-user-lane-current-width);
+            max-width: var(--hud-user-lane-current-width);
+            min-width: 0;
+            overflow: hidden;
+            display: flex;
+            align-items: stretch;
+            gap: clamp(6px, 0.5vw, 10px);
+            transition:
+                flex-basis 320ms cubic-bezier(0.18, 0.78, 0.18, 1),
+                max-width 320ms cubic-bezier(0.18, 0.78, 0.18, 1),
+                opacity 180ms ease;
+        }
+
+        .hud-preset-user-lane[data-expanded="1"] {
+            --hud-user-lane-current-width: var(--hud-user-lane-expanded-width, 0px);
+            opacity: 1;
+            pointer-events: auto;
         }
 
         .hud-mode-stock-lane,

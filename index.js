@@ -3967,12 +3967,17 @@ function mountHUDControls() {
     const userGroupTab = createPresetGroupTab({
         group: "user",
         label: "USER",
-        controlsId: "hud-user-mode-card-lane",
-        title: "Show user preset knobs",
+        controlsId: "hud-user-preset-lane",
+        title: "Show user presets",
         knobTitle: "Show user preset knobs",
     });
     const $userGroupLabel = userGroupTab.tab;
     const $userGroupKnob = userGroupTab.knob;
+
+    const $userPresetLane = document.createElement("div");
+    $userPresetLane.id = "hud-user-preset-lane";
+    $userPresetLane.className = "hud-preset-user-lane";
+    $userPresetLane.dataset.expanded = "1";
 
     const $userGroupSpacer = document.createElement("div");
     $userGroupSpacer.className = "hud-mode-spacer";
@@ -4063,6 +4068,7 @@ function mountHUDControls() {
     let motionCubeController = null;
     let stockQuickPresetsExpanded = true;
     let stockPresetKnobsExpanded = false;
+    let userQuickPresetsExpanded = true;
     let userPresetKnobsExpanded = false;
     const reduceMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const fineHoverQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
@@ -4489,6 +4495,8 @@ function mountHUDControls() {
         $stockModeCardLane.style.setProperty("--hud-stock-mode-lane-expanded-width", `${Math.max(0, expandedCardWidth)}px`);
         const expandedUserCardWidth = Math.ceil($userModeCardLaneTrack.scrollWidth);
         $userModeCardLane.style.setProperty("--hud-user-mode-lane-expanded-width", `${Math.max(0, expandedUserCardWidth)}px`);
+        const expandedUserLaneWidth = Math.ceil($userPresetLane.scrollWidth);
+        $userPresetLane.style.setProperty("--hud-user-lane-expanded-width", `${Math.max(0, expandedUserLaneWidth)}px`);
     };
 
     const syncPresetSpacerWidths = () => {
@@ -4564,14 +4572,23 @@ function mountHUDControls() {
     const refreshUserPresetKnobUI = () => {
         const isExpanded = userPresetKnobsExpanded;
         $userGroupLabel.dataset.knobExpanded = isExpanded ? "1" : "0";
-        $userGroupLabel.dataset.expanded = isExpanded ? "1" : "0";
-        $userGroupLabel.dataset.active = isExpanded ? "1" : "0";
         $userGroupLabel.title = isExpanded ? "Hide user preset knobs" : "Show user preset knobs";
         $userGroupLabel.setAttribute("aria-label", isExpanded ? "Hide user preset knobs" : "Show user preset knobs");
         $userGroupLabel.setAttribute("aria-expanded", isExpanded ? "true" : "false");
         $userGroupKnob.dataset.expanded = isExpanded ? "1" : "0";
         $userGroupKnob.title = isExpanded ? "Hide user preset knobs" : "Show user preset knobs";
         $userModeCardLane.dataset.expanded = isExpanded ? "1" : "0";
+    };
+
+    const refreshUserQuickPresetsUI = () => {
+        const isExpanded = userQuickPresetsExpanded;
+        $userPresetLane.dataset.expanded = isExpanded ? "1" : "0";
+        $userGroupLabel.dataset.expanded = isExpanded ? "1" : "0";
+        $userGroupLabel.dataset.active = isExpanded ? "1" : "0";
+        $userGroupLabel.title = isExpanded ? "Hide user presets" : "Show user presets";
+        $userGroupLabel.setAttribute("aria-label", isExpanded ? "Hide user presets" : "Show user presets");
+        $userGroupLabel.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+        refreshPresetLaneMeasurements();
     };
 
     /**
@@ -4598,6 +4615,14 @@ function mountHUDControls() {
         userPresetKnobsExpanded = !!expanded;
         refreshUserPresetKnobUI();
         refreshPresetKnobCollapseUI();
+    };
+
+    /**
+     * @param {boolean} expanded
+     */
+    const setUserQuickPresetsExpanded = (expanded) => {
+        userQuickPresetsExpanded = !!expanded;
+        refreshUserQuickPresetsUI();
     };
 
     /**
@@ -5215,7 +5240,7 @@ function mountHUDControls() {
     });
 
     refreshPresetLaneMeasurements();
-    $modeButtonStrip.append($userGroupLabel, $savePreset);
+    $modeButtonStrip.append($userGroupLabel, $userPresetLane, $savePreset);
     $modeStrip.append($userGroupSpacer, $savePresetSpacer, $userModeCardLane);
 
     userPresetSlots.forEach((slot, index) => {
@@ -5226,7 +5251,7 @@ function mountHUDControls() {
             ariaLabel: `${getUserPresetShortLabel(slot.id)} preset slot`,
         });
         const $userButton = userButtonControl.button;
-        $modeButtonStrip.appendChild($userButton);
+        $userPresetLane.appendChild($userButton);
         presetButtonReactiveItems.push($userButton);
         const userCardControl = createPresetMorphCard({
             cardTitle: `${getUserPresetShortLabel(slot.id)} · EMPTY`,
@@ -5300,6 +5325,7 @@ function mountHUDControls() {
     mountFooterPresetTransferConsole();
     refreshUserPresetButtonsUI();
     refreshStockPresetLaneUI();
+    refreshUserQuickPresetsUI();
 
     $savePreset.addEventListener("click", (event) => {
         event.preventDefault();
@@ -5326,8 +5352,16 @@ function mountHUDControls() {
     $userGroupLabel.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        setUserPresetKnobsExpanded(!userPresetKnobsExpanded);
-        refreshScrollControlUI();
+        const target = event.target;
+        const knobToggleRequested = target instanceof Element
+            && target.closest(".hud-preset-group-toggle-knob")
+            && $userGroupLabel.contains(target);
+        if (knobToggleRequested) {
+            setUserPresetKnobsExpanded(!userPresetKnobsExpanded);
+            refreshScrollControlUI();
+            return;
+        }
+        setUserQuickPresetsExpanded(!userQuickPresetsExpanded);
     });
 
     const gainControl = getGainDSPControl();
