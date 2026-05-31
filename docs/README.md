@@ -11,7 +11,7 @@
 
 ## Plans
 
-- `plans/2026-05-30-state-checkpoint.md` — **current state** (HEAD `871ff6b`, shipped work, next-up priorities)
+- `plans/2026-05-30-state-checkpoint.md` — **current state** (HEAD `1a79df8`, shipped work, next-up priorities)
 - `plans/2026-05-30-performance-optimization-plan.md` — perf audit + shipped optimizations
 - `plans/2026-05-29-next-up-checkpoint.md` — superseded, retained for history
 

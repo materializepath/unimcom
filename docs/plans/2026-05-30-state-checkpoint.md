@@ -1,61 +1,69 @@
-# Project State Checkpoint — 2026-05-30
+# Project State Checkpoint — 2026-05-30 (updated 23:21)
 
 ## Snapshot
 
 - **Repo:** `CODE/Mobiel/exports/sound-materialize-faust-webapp-20260227-r7`
 - **Branch:** `main`
-- **HEAD:** `871ff6b` (`ui: integrate preset knob toggles into stock and user tabs`)
+- **HEAD:** `1a79df8` (`ui: cycle SAVE button text between SELECT and SLOT when armed`)
 - **Working tree:** clean
-- **Backup:** `backups/unimcom-871ff6b-20260530.tar.gz` (5.5 MB)
+- **Backup:** `backups/unimcom-1a79df8-20260530.tar.gz` (5.5 MB)
 
-## Shipped since last checkpoint (14218d2 → 871ff6b)
+## Shipped since last checkpoint (871ff6b → 1a79df8)
 
 | Commit | Message | Scope |
 |--------|---------|-------|
-| `2a2f670` | `perf: optimize startup caching and runtime responsiveness` | SW precache, RAF resize throttle, idle glyph mount, `.htaccess` compression |
-| `3edd702` | `ui: expand stock preset lane by default` | `stockQuickPresetsExpanded=true` |
-| `19781b3` | `ui: use ↻ glyph for preset knob toggles` | Toggle button glyphs |
-| `79539e7` | `fix: exclude global gain from randomize` | `isGainControl` filter in Randomize |
-| `f53f658` | `ui: set default global morph time to 2.10s` | `DEFAULT_GLOBAL_MORPH_DURATION_MS=2100` |
-| `153ff60` | `ui: add DRK RM theme and default gain max` | New `drk-rm` theme + gain default to `-3` dB (max) |
-| `b9ec9cd` | `ui: match preset strip height to top bar` | Unified `--hud-mode-button-row-height` → `--hud-control-row-height` |
-| `871ff6b` | `ui: integrate preset knob toggles into stock and user tabs` | Dual-action tabs (label + embedded ↻), removed standalone toggles |
-
-## Performance (measured and shipped)
-
-- Service-worker precache: **2,054,617 B → 890,334 B** (−56.67%)
-- Optional Three.js deferred to idle
-- Resize path RAF-throttled
-- `.htaccess` compression for JSON/WASM/text types
+| `142f433` | `ui: USER tab dual-action parity with STOCK tab + zone hover states` | USER label toggles quick-lane, ↻ toggles knob lane; per-zone hover colors |
+| `302ec1e` | `ui: incorporate SAVE into USER tab between label and ↻ toggle` | SAVE moved into USER tab (3-zone grid), removed standalone button + spacer |
+| `548a9ff` | `fix: move savePreset insertion after declaration to prevent TDZ error` | Fixed ReferenceError crash — `.before()` called before `const` init |
+| `df635c2` | `ui: pulsate SELECT text with theme accent colors when save mode is armed` | CSS `@keyframes save-select-pulse` cycling `--hud-accent` ↔ `--hud-on` |
+| `1a79df8` | `ui: cycle SAVE button text between SELECT and SLOT when armed` | JS interval cycling "SELECT" ↔ "SLOT" every 700ms; 1.4s color breath sync |
 
 ## Functional behavior (current live state)
 
+### Preset strip layout
+- **STOCK tab:** `[STOCK] [↻]` — 2-zone, label toggles stock quick-lane, ↻ toggles stock knob lane
+- **USER tab:** `[USER] [SAVE] [↻]` — 3-zone, label toggles user quick-lane, SAVE arms save mode, ↻ toggles user knob lane
+- No standalone SAVE button or spacer
+- Both strips share unified height via `--hud-control-row-height`
+
+### SAVE button behavior
+- Default: displays **READY** in dim ink, static
+- Armed: text cycles **SELECT ↔ SLOT** every 700ms, color pulsates between `--hud-accent` and `--hud-on` over 1.4s
+- Disarming clears interval, returns to **READY**
+- Save mode state drives `data-save-armed="1"` on the `.hud-preset-group-toggle-save` zone
+
+### Hover states (all preset tab zones)
+- **Label:** hover → accent; expanded → accent; expanded+hover → brighter
+- **↻:** hover → accent; knob-expanded → accent; expanded+hover → brighter
+- **SAVE:** hover → accent; armed → "on" color; armed+hover → brighter
+- All transitions: 180ms ease
+
+### Carried forward from prior checkpoints
 - **Gain default:** −3 dB (max); excluded from Randomize
 - **M.TIME default:** 2.10S (2100 ms)
-- **Stock preset lane:** expanded by default on load
-- **DRK RM theme:** available in VIBE dropdown (black/red palette)
-- **Preset strip height:** matches main top bar (unified CSS var)
-- **Preset tabs:** dual-action (click label toggles quick-lane, click ↻ toggles knob lane); standalone toggles removed
+- **Stock preset lane:** expanded by default
+- **DRK RM theme:** available in VIBE dropdown
+- **SW precache:** 890 KB (−56.7% from 2.05 MB)
+- **Resize path:** RAF-throttled
 
 ## Live deployment status
 
-- Root (`https://unimcom.materialize.fun/`) and `/test/` are in sync
-- Regression check: PASS (parity + runtime contract, `apiVersion=1.2.2`)
-- Cache-bust namespace: `20260530gainmax1` (across `index.html`, `index.js`, `service-worker.js`)
+- Root (`https://unimcom.materialize.fun/`) and `/test/` in sync
+- Regression: PASS (parity + runtime contract, `apiVersion=1.2.2`)
+- Latest regression: `2026-05-30` post `1a79df8` — all gates green
+- Cache-bust namespace: `20260530gainmax1`
 
 ## What remains open / next-up
 
-### In-progress UI task
-- USER tab parity with STOCK tab (same dual-action label+↻ behavior)
-- Hover states on preset tab label and ↻ zones (color change on hover, state-dependent)
+### Priority 1 — MIDI + live-input reliability pass
+1. Richer I/O diagnostics in `__agentAPI.state.get()` / `.full()`
+2. Harden failure handling for toggle paths
+3. Validate with browser checks
 
-### From prior checkpoint (still relevant)
+### Priority 2 — Docs / automation
+1. Automate deploy regression in CI
+2. Consider edge-case presets for regression coverage
 
-1. **MIDI + live-input reliability pass**
-   - Richer I/O diagnostics in `__agentAPI.state.get()` / `.full()`
-   - Harden failure handling for toggle paths
-   - Validate with browser checks
-
-2. **Docs / automation improvements**
-   - Automate deploy regression in CI
-   - Consider edge-case presets for regression coverage
+### Nice-to-have UI refinements
+- USER quick-buttons lane collapse/expand animation polish
+- SAVE metronome tick sync with color pulse for tighter SELECT→SLOT rhythm
