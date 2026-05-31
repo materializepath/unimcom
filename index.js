@@ -3974,6 +3974,9 @@ function mountHUDControls() {
     const $userGroupLabel = userGroupTab.tab;
     const $userGroupKnob = userGroupTab.knob;
 
+    // Insert SAVE zone into USER tab (between label and knob)
+    $userGroupKnob.before($savePreset);
+
     const $userPresetLane = document.createElement("div");
     $userPresetLane.id = "hud-user-preset-lane";
     $userPresetLane.className = "hud-preset-user-lane";
@@ -3984,14 +3987,14 @@ function mountHUDControls() {
     $userGroupSpacer.dataset.role = "user-group";
     $userGroupSpacer.setAttribute("aria-hidden", "true");
 
-    const $savePreset = document.createElement("button");
-    $savePreset.type = "button";
-    $savePreset.className = "hud-control-btn hud-mode-btn";
-    $savePreset.dataset.kind = "utility";
+    const $savePreset = document.createElement("span");
+    $savePreset.className = "hud-preset-group-toggle-save";
+    $savePreset.dataset.role = "save";
     $savePreset.dataset.active = "0";
     $savePreset.dataset.saveArmed = "0";
     $savePreset.title = "Arm save mode";
     $savePreset.setAttribute("aria-label", "Arm save mode");
+    $savePreset.tabIndex = 0;
     const $savePresetName = document.createElement("span");
     $savePresetName.className = "hud-mode-name";
     $savePresetName.textContent = "SAVE";
@@ -3999,11 +4002,6 @@ function mountHUDControls() {
     $savePresetMeta.className = "hud-mode-meta";
     $savePresetMeta.textContent = "READY";
     $savePreset.append($savePresetName, $savePresetMeta);
-
-    const $savePresetSpacer = document.createElement("div");
-    $savePresetSpacer.className = "hud-mode-spacer";
-    $savePresetSpacer.dataset.role = "save";
-    $savePresetSpacer.setAttribute("aria-hidden", "true");
 
     const $userModeCardLane = document.createElement("div");
     $userModeCardLane.id = "hud-user-mode-card-lane";
@@ -4054,7 +4052,7 @@ function mountHUDControls() {
     ];
     topStripReactiveItems.forEach(($item) => $item.classList.add("hud-hover-reactive-item"));
 
-    const presetButtonReactiveItems = [$stockGroupLabel, $userGroupLabel, $savePreset];
+    const presetButtonReactiveItems = [$stockGroupLabel, $userGroupLabel];
     presetButtonReactiveItems.forEach(($item) => $item.classList.add("hud-hover-reactive-item"));
     const presetCardReactiveItems = [];
 
@@ -4515,7 +4513,6 @@ function mountHUDControls() {
         };
         applyWidth($stockGroupSpacer, $stockGroupLabel);
         applyWidth($userGroupSpacer, $userGroupLabel);
-        applyWidth($savePresetSpacer, $savePreset);
     };
 
     const bindLinkedHorizontalScroll = ($a, $b) => {
@@ -5240,8 +5237,8 @@ function mountHUDControls() {
     });
 
     refreshPresetLaneMeasurements();
-    $modeButtonStrip.append($userGroupLabel, $userPresetLane, $savePreset);
-    $modeStrip.append($userGroupSpacer, $savePresetSpacer, $userModeCardLane);
+    $modeButtonStrip.append($userGroupLabel, $userPresetLane);
+    $modeStrip.append($userGroupSpacer, $userModeCardLane);
 
     userPresetSlots.forEach((slot, index) => {
         const userButtonControl = createPresetQuickButton({
@@ -5327,13 +5324,6 @@ function mountHUDControls() {
     refreshStockPresetLaneUI();
     refreshUserQuickPresetsUI();
 
-    $savePreset.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        globalControlState.saveModeArmed = !globalControlState.saveModeArmed;
-        refreshUserPresetButtonsUI();
-    });
-
     $stockGroupLabel.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -5353,6 +5343,14 @@ function mountHUDControls() {
         event.preventDefault();
         event.stopPropagation();
         const target = event.target;
+        const saveRequested = target instanceof Element
+            && target.closest(".hud-preset-group-toggle-save")
+            && $userGroupLabel.contains(target);
+        if (saveRequested) {
+            globalControlState.saveModeArmed = !globalControlState.saveModeArmed;
+            refreshUserPresetButtonsUI();
+            return;
+        }
         const knobToggleRequested = target instanceof Element
             && target.closest(".hud-preset-group-toggle-knob")
             && $userGroupLabel.contains(target);

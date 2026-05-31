@@ -2056,6 +2056,60 @@
             border-left: none;
         }
 
+        /* USER tab: 3-column grid for label + SAVE + ↻ */
+        .hud-preset-group-toggle[data-group="user"] {
+            grid-template-columns: auto auto auto;
+        }
+
+        /* SAVE zone inside USER tab */
+        .hud-preset-group-toggle-save {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: clamp(32px, 2.6vw, 42px);
+            padding: 0 clamp(4px, 0.35vw, 6px);
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+            color: var(--hud-ink-soft, rgba(208, 212, 216, 0.66));
+            font-size: clamp(7px, 0.56vw, 8px);
+            line-height: 1;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            transition:
+                color 180ms ease,
+                filter 180ms ease,
+                border-color 180ms ease;
+        }
+
+        .hud-preset-group-toggle-save .hud-mode-meta {
+            font-size: clamp(6px, 0.48vw, 7px);
+            opacity: 0.7;
+            margin-top: 1px;
+        }
+
+        /* SAVE zone hover → accent */
+        .hud-preset-group-toggle .hud-preset-group-toggle-save:hover {
+            color: var(--hud-preset-active-border, var(--hud-border-active, rgba(71, 229, 186, 1)));
+            border-left-color: color-mix(in srgb, var(--hud-preset-active-border, var(--hud-border-active, rgba(71, 229, 186, 1))) 46%, rgba(255, 255, 255, 0.08));
+            filter: brightness(1.12) saturate(1.12);
+        }
+
+        /* SAVE zone: armed state */
+        .hud-preset-group-toggle-save[data-save-armed="1"],
+        .hud-preset-group-toggle-save[data-active="1"] {
+            color: var(--hud-on, rgba(71, 229, 186, 1));
+            border-left-color: color-mix(in srgb, var(--hud-on, rgba(71, 229, 186, 1)) 50%, rgba(255, 255, 255, 0.08));
+        }
+
+        .hud-preset-group-toggle-save[data-save-armed="1"]:hover,
+        .hud-preset-group-toggle-save[data-active="1"]:hover {
+            color: var(--hud-preset-active-border, var(--hud-border-active, rgba(71, 229, 186, 1)));
+            filter: brightness(1.18) saturate(1.14);
+        }
+
         .hud-preset-stock-lane {
             --hud-stock-lane-current-width: 0px;
             flex: 0 0 var(--hud-stock-lane-current-width);
