@@ -3101,31 +3101,31 @@
 
         /* ============================================================
            Mondri Legibility Pass — scoped to Mondri vibe only
-           Selector: html[data-hud-theme="mondri"]
+           Selector: html[data-hud-theme^="mondri"]
            CSS variable values are set in index.js (theme definition).
            This block handles element-specific overrides for
            backgrounds, borders, labels, hover states, etc.
            ============================================================ */
 
-        html[data-hud-theme="mondri"] {
+        html[data-hud-theme^="mondri"] {
             text-rendering: geometricPrecision;
             -webkit-font-smoothing: antialiased;
         }
 
         /* --- Top bar: more opaque background, stronger border --- */
-        html[data-hud-theme="mondri"] #hud-control-strip {
+        html[data-hud-theme^="mondri"] #hud-control-strip {
             background: rgba(246, 244, 236, 0.52);
             border-color: rgba(0, 0, 0, 0.42);
         }
 
         /* --- Top bar buttons: darker text, heavier borders --- */
-        html[data-hud-theme="mondri"] .hud-control-btn {
+        html[data-hud-theme^="mondri"] .hud-control-btn {
             font-weight: 700;
             letter-spacing: 0.06em;
             text-shadow: none;
         }
 
-        html[data-hud-theme="mondri"] #hud-control-strip .hud-control-btn {
+        html[data-hud-theme^="mondri"] #hud-control-strip .hud-control-btn {
             background:
                 linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 22%, rgba(0, 0, 0, 0.04) 100%),
                 rgba(248, 246, 240, 0.48);
@@ -3133,8 +3133,8 @@
             color: var(--hud-ink, rgba(18, 16, 14, 0.96));
         }
 
-        html[data-hud-theme="mondri"] #hud-control-strip .hud-control-btn:hover,
-        html[data-hud-theme="mondri"] #hud-control-strip .hud-control-btn:focus-visible {
+        html[data-hud-theme^="mondri"] #hud-control-strip .hud-control-btn:hover,
+        html[data-hud-theme^="mondri"] #hud-control-strip .hud-control-btn:focus-visible {
             background:
                 linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.06) 22%, rgba(0, 0, 0, 0.02) 100%),
                 rgba(255, 253, 249, 0.72);
@@ -3145,7 +3145,7 @@
         }
 
         /* --- Preset tabs (STOCK / USER): stronger borders, more defined --- */
-        html[data-hud-theme="mondri"] .hud-preset-group-toggle {
+        html[data-hud-theme^="mondri"] .hud-preset-group-toggle {
             background:
                 linear-gradient(180deg, rgba(250, 250, 244, 0.96) 0%, rgba(210, 208, 200, 0.64) 100%);
             border: 1px solid rgba(0, 0, 0, 0.56);
@@ -3154,22 +3154,22 @@
             opacity: 1;
         }
 
-        html[data-hud-theme="mondri"] .hud-preset-group-toggle:hover,
-        html[data-hud-theme="mondri"] .hud-preset-group-toggle:focus-visible,
-        html[data-hud-theme="mondri"] .hud-preset-group-toggle[data-expanded="1"] {
+        html[data-hud-theme^="mondri"] .hud-preset-group-toggle:hover,
+        html[data-hud-theme^="mondri"] .hud-preset-group-toggle:focus-visible,
+        html[data-hud-theme^="mondri"] .hud-preset-group-toggle[data-expanded="1"] {
             background:
                 linear-gradient(180deg, rgba(255, 253, 249, 0.98) 0%, rgba(232, 228, 218, 0.72) 100%);
             border-color: rgba(0, 0, 0, 0.78);
         }
 
-        html[data-hud-theme="mondri"] .hud-preset-group-toggle * {
+        html[data-hud-theme^="mondri"] .hud-preset-group-toggle * {
             color: var(--hud-ink);
             text-shadow: none;
             opacity: 1;
         }
 
         /* --- Knob cards (Faust components): less washed-out gradient, stronger borders --- */
-        html[data-hud-theme="mondri"] .faust-ui-component.faust-ui-component-knob {
+        html[data-hud-theme^="mondri"] .faust-ui-component.faust-ui-component-knob {
             background:
                 linear-gradient(180deg, var(--hud-accent-soft, rgba(30, 91, 168, 0.32)) 0%, var(--hud-grid, rgba(0, 0, 0, 0.14)) 8%, rgba(0, 0, 0, 0.10) 14%, rgba(0, 0, 0, 0.48) 100%),
                 radial-gradient(circle at 50% 0%, rgba(220, 215, 205, 0.22), rgba(0, 0, 0, 0) 58%),
@@ -3183,13 +3183,13 @@
         }
 
         /* --- Knob canvas: slightly higher contrast ghosting --- */
-        html[data-hud-theme="mondri"] .faust-ui-component.faust-ui-component-knob canvas {
+        html[data-hud-theme^="mondri"] .faust-ui-component.faust-ui-component-knob canvas {
             opacity: 0.88;
             filter: contrast(1.12) brightness(0.96);
         }
 
         /* --- Parameter label backing strip --- */
-        html[data-hud-theme="mondri"] .faust-ui-component.faust-ui-component-knob > .faust-ui-component-label {
+        html[data-hud-theme^="mondri"] .faust-ui-component.faust-ui-component-knob > .faust-ui-component-label {
             background: rgba(246, 244, 238, 0.72);
             margin: 2px 4px 0 4px;
             padding: 1px 4px;
@@ -3197,75 +3197,75 @@
         }
 
         /* --- Parameter values (red in Mondri — already saturated, keep) --- */
-        html[data-hud-theme="mondri"] .faust-hud-value {
+        html[data-hud-theme^="mondri"] .faust-hud-value {
             font-weight: 800;
             text-shadow: none;
             opacity: 1;
         }
 
         /* --- State labels (IDLE/SYNC/PEAK): darker, more visible --- */
-        html[data-hud-theme="mondri"] .faust-hud-state {
+        html[data-hud-theme^="mondri"] .faust-hud-state {
             font-weight: 700;
             opacity: 1;
         }
 
-        html[data-hud-theme="mondri"] .faust-ui-component.faust-ui-component-knob[data-signal-state="IDLE"] .faust-hud-state {
+        html[data-hud-theme^="mondri"] .faust-ui-component.faust-ui-component-knob[data-signal-state="IDLE"] .faust-hud-state {
             color: rgba(52, 48, 42, 0.82);
         }
 
         /* --- Meter bars: stronger contrast --- */
-        html[data-hud-theme="mondri"] .faust-hud-bars {
+        html[data-hud-theme^="mondri"] .faust-hud-bars {
             opacity: 1;
             filter: contrast(1.18);
         }
 
-        html[data-hud-theme="mondri"] .faust-hud-bar {
+        html[data-hud-theme^="mondri"] .faust-hud-bar {
             border-color: rgba(0, 0, 0, 0.22);
             background: rgba(240, 236, 228, 0.42);
         }
 
-        html[data-hud-theme="mondri"] .faust-hud-bar.active {
+        html[data-hud-theme^="mondri"] .faust-hud-bar.active {
             opacity: 1;
             filter: saturate(1.25) contrast(1.1);
         }
 
         /* --- Footer: higher contrast on the cream body --- */
-        html[data-hud-theme="mondri"] #site-footer {
+        html[data-hud-theme^="mondri"] #site-footer {
             --footer-copy-color: rgba(24, 22, 18, 0.82);
         }
 
-        html[data-hud-theme="mondri"] #site-footer p {
+        html[data-hud-theme^="mondri"] #site-footer p {
             background: rgba(246, 244, 236, 0.44);
             border-color: rgba(0, 0, 0, 0.22);
             color: var(--footer-copy-color, rgba(24, 22, 18, 0.82));
         }
 
-        html[data-hud-theme="mondri"] .footer-console-panel {
+        html[data-hud-theme^="mondri"] .footer-console-panel {
             background: rgba(246, 244, 236, 0.92);
             border-color: rgba(0, 0, 0, 0.48);
         }
 
-        html[data-hud-theme="mondri"] .footer-console-btn,
-        html[data-hud-theme="mondri"] .footer-console-toggle {
+        html[data-hud-theme^="mondri"] .footer-console-btn,
+        html[data-hud-theme^="mondri"] .footer-console-toggle {
             border-color: rgba(0, 0, 0, 0.52);
             color: var(--hud-ink);
         }
 
-        html[data-hud-theme="mondri"] .footer-console-btn[data-variant="accent"] {
+        html[data-hud-theme^="mondri"] .footer-console-btn[data-variant="accent"] {
             background: var(--hud-accent, rgba(212, 42, 42, 0.96));
             color: #fff;
             border-color: rgba(0, 0, 0, 0.64);
             font-weight: 700;
         }
 
-        html[data-hud-theme="mondri"] .footer-console-textarea {
+        html[data-hud-theme^="mondri"] .footer-console-textarea {
             background: rgba(252, 250, 244, 0.96);
             color: var(--hud-ink);
             border-color: rgba(0, 0, 0, 0.42);
         }
 
         /* --- Active / selected states: stronger borders --- */
-        html[data-hud-theme="mondri"] .hud-control-btn[data-active="1"] {
+        html[data-hud-theme^="mondri"] .hud-control-btn[data-active="1"] {
             border-color: rgba(0, 0, 0, 0.84);
             box-shadow:
                 inset 0 0 0 1px rgba(255, 255, 255, 0.42),
@@ -3273,17 +3273,138 @@
         }
 
         /* --- Disabled / inactive: still readable --- */
-        html[data-hud-theme="mondri"] [disabled],
-        html[data-hud-theme="mondri"] .disabled,
-        html[data-hud-theme="mondri"] [data-active="0"]:not(:hover) {
+        html[data-hud-theme^="mondri"] [disabled],
+        html[data-hud-theme^="mondri"] .disabled,
+        html[data-hud-theme^="mondri"] [data-active="0"]:not(:hover) {
             opacity: 0.62;
             filter: grayscale(0.15);
         }
 
         /* --- Mobile: tighter letter-spacing --- */
         @media (max-width: 900px) {
-            html[data-hud-theme="mondri"] .faust-ui-component.faust-ui-component-knob > .faust-ui-component-label {
+            html[data-hud-theme^="mondri"] .faust-ui-component.faust-ui-component-knob > .faust-ui-component-label {
                 padding: 0 3px;
+            }
+        }
+
+        /* ============================================================
+           Mondri Clear — parameter tiles as pale drafting paper
+           Overrides tile inline backgrounds/borders with !important.
+           Selector: html[data-hud-theme="mondri-clear"]
+           ============================================================ */
+
+        /* --- Tile background: pale off-white fade to transparent --- */
+        html[data-hud-theme="mondri-clear"] .faust-ui-component.faust-ui-component-knob {
+            background:
+                linear-gradient(
+                    to bottom,
+                    rgba(255, 255, 250, 0.96) 0%,
+                    rgba(250, 249, 242, 0.65) 32%,
+                    rgba(245, 244, 236, 0.25) 66%,
+                    rgba(245, 244, 236, 0.04) 100%
+                ) !important;
+            border: 1px solid rgba(20, 24, 24, 0.34) !important;
+            box-shadow: none !important;
+        }
+
+        /* --- Header strip: more opaque label area --- */
+        html[data-hud-theme="mondri-clear"] .faust-ui-component.faust-ui-component-knob > .faust-ui-component-label {
+            background: rgba(255, 255, 250, 0.84) !important;
+            border-bottom: 1px solid rgba(20, 24, 24, 0.18);
+            margin: 2px 4px 0 4px;
+            padding: 1px 5px;
+        }
+
+        /* --- Text overlay: dark, bold, opaque --- */
+        html[data-hud-theme="mondri-clear"] .faust-hud-overlay {
+            color: #101313 !important;
+            font-weight: 800 !important;
+            opacity: 1 !important;
+            text-shadow: none !important;
+        }
+
+        html[data-hud-theme="mondri-clear"] .faust-hud-overlay * {
+            color: #101313 !important;
+            font-weight: 800 !important;
+            opacity: 1 !important;
+            text-shadow: none !important;
+        }
+
+        /* --- Numeric values: stronger red --- */
+        html[data-hud-theme="mondri-clear"] .faust-hud-value {
+            color: #9e2323 !important;
+            font-weight: 800 !important;
+            opacity: 1 !important;
+        }
+
+        /* --- State labels: readable dark --- */
+        html[data-hud-theme="mondri-clear"] .faust-hud-state {
+            color: #101313 !important;
+            font-weight: 800 !important;
+            opacity: 1 !important;
+        }
+
+        html[data-hud-theme="mondri-clear"] .faust-ui-component.faust-ui-component-knob[data-signal-state="IDLE"] .faust-hud-state {
+            color: rgba(20, 24, 24, 0.62) !important;
+        }
+
+        html[data-hud-theme="mondri-clear"] .faust-ui-component.faust-ui-component-knob[data-signal-state="SYNC"] .faust-hud-state {
+            color: #101313 !important;
+        }
+
+        html[data-hud-theme="mondri-clear"] .faust-ui-component.faust-ui-component-knob[data-signal-state="PEAK"] .faust-hud-state {
+            color: #9e2323 !important;
+        }
+
+        /* --- Ghosted knobs: less muddy canvas --- */
+        html[data-hud-theme="mondri-clear"] .faust-ui-component.faust-ui-component-knob canvas {
+            opacity: 0.70 !important;
+            filter: contrast(1.08) brightness(1.04) !important;
+        }
+
+        /* --- Meter bars: subtle and clean --- */
+        html[data-hud-theme="mondri-clear"] .faust-hud-bar {
+            background: rgba(240, 236, 228, 0.38);
+            border-color: rgba(20, 24, 24, 0.16);
+        }
+
+        html[data-hud-theme="mondri-clear"] .faust-hud-bar.active {
+            background: #9e2323;
+            border-color: rgba(20, 24, 24, 0.28);
+            opacity: 0.85;
+        }
+
+        /* ============================================================
+           Active / engaged — bright warm yellow border
+           Targets: data-knob-gesture-active, data-changing,
+           :focus-within, and the S-button's linked state.
+           ============================================================ */
+
+        :root {
+            --mondri-active-yellow: #ffd84a;
+            --mondri-active-yellow-glow: rgba(255, 216, 74, 0.46);
+        }
+
+        html[data-hud-theme="mondri-clear"] .faust-ui-component.faust-ui-component-knob[data-knob-gesture-active="1"],
+        html[data-hud-theme="mondri-clear"] .faust-ui-component.faust-ui-component-knob[data-changing="1"],
+        html[data-hud-theme="mondri-clear"] .faust-ui-component.faust-ui-component-knob:focus-within {
+            border-color: var(--mondri-active-yellow) !important;
+            box-shadow:
+                0 0 0 1px var(--mondri-active-yellow),
+                0 0 12px var(--mondri-active-yellow-glow),
+                inset 0 0 0 1px rgba(255, 246, 190, 0.72) !important;
+        }
+
+        /* --- Seq toggle button (S): keep linked state visible --- */
+        html[data-hud-theme="mondri-clear"] .hud-knob-seq-toggle[data-seq-linked="1"] {
+            color: var(--mondri-active-yellow) !important;
+            text-shadow: 0 0 6px var(--mondri-active-yellow-glow);
+        }
+
+        /* --- Mobile --- */
+        @media (max-width: 900px) {
+            html[data-hud-theme="mondri-clear"] .faust-ui-component.faust-ui-component-knob > .faust-ui-component-label {
+                padding: 0 4px;
             }
         }
     </style>
@@ -3325,7 +3446,7 @@
             </div>
         </div>
     </footer>
-<script src="./index.js?v=20260530mondri2"></script>
+<script src="./index.js?v=20260530mondri3"></script>
 </body>
 
 </html>

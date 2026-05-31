@@ -1,6 +1,6 @@
 // Set to > 0 if the DSP is polyphonic
 const FAUST_DSP_VOICES = 0;
-const CREATE_NODE_MODULE_SPEC = "./create-node.js?v=20260530mondri2";
+const CREATE_NODE_MODULE_SPEC = "./create-node.js?v=20260530mondri3";
 const THREE_MODULE_SPEC = "./vendor/three.module.min.js";
 const IS_LOCAL_PREVIEW = ["localhost", "127.0.0.1"].includes(window.location.hostname);
 
@@ -575,6 +575,28 @@ const HUD_THEMES = Object.freeze([
         "--hud-mode-knob-fill": "rgba(252, 250, 244, 0.96)",
         "--hud-mode-knob-core-fill": "rgba(248, 244, 236, 0.92)",
         "--hud-pointer-glow": "rgba(212, 42, 42, 0.5)",
+    }),
+    createHUDTheme("mondri-clear", "Mondri Clear", {
+        "--hud-bg": "rgba(255, 254, 250, 0.94)",
+        "--hud-panel-bg": "rgba(255, 253, 249, 0.98)",
+        "--hud-border": "rgba(20, 24, 24, 0.34)",
+        "--hud-ink": "#101313",
+        "--hud-ink-soft": "rgba(20, 24, 24, 0.78)",
+        "--hud-off": "rgba(160, 156, 148, 0.28)",
+        "--hud-on": "#9e2323",
+        "--hud-accent": "#9e2323",
+        "--hud-accent-soft": "rgba(30, 91, 168, 0.28)",
+        "--hud-border-active": "rgba(0, 0, 0, 0.94)",
+        "--hud-grid": "rgba(0, 0, 0, 0.12)",
+        "--hud-font-family": "\"Space Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+        "--hud-body-bg": "#F4F1E8",
+        "--hud-shell-bg-base": "#EDE9DD",
+        "--hud-panel-frame-bg": "linear-gradient(180deg, rgba(255, 254, 252, 0.95) 0%, rgba(245, 242, 234, 0.88) 100%)",
+        "--hud-strip-bg": "rgba(255, 253, 249, 0.68)",
+        "--hud-strip-border": "rgba(20, 24, 24, 0.38)",
+        "--hud-mode-knob-fill": "rgba(255, 254, 250, 0.94)",
+        "--hud-mode-knob-core-fill": "rgba(248, 244, 236, 0.88)",
+        "--hud-pointer-glow": "rgba(212, 42, 42, 0.45)",
     }),
 ]);
 
