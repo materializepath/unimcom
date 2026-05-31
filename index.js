@@ -3974,9 +3974,6 @@ function mountHUDControls() {
     const $userGroupLabel = userGroupTab.tab;
     const $userGroupKnob = userGroupTab.knob;
 
-    // Insert SAVE zone into USER tab (between label and knob)
-    $userGroupKnob.before($savePreset);
-
     const $userPresetLane = document.createElement("div");
     $userPresetLane.id = "hud-user-preset-lane";
     $userPresetLane.className = "hud-preset-user-lane";
@@ -4002,6 +3999,9 @@ function mountHUDControls() {
     $savePresetMeta.className = "hud-mode-meta";
     $savePresetMeta.textContent = "READY";
     $savePreset.append($savePresetName, $savePresetMeta);
+
+    // Insert SAVE zone into USER tab (between label and knob)
+    $userGroupKnob.before($savePreset);
 
     const $userModeCardLane = document.createElement("div");
     $userModeCardLane.id = "hud-user-mode-card-lane";
